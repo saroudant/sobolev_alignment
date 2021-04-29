@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="57b26846-65b7-404b-a7df-c0198e8b0d46" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/test_sobolev_alignment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sobolev_alignment/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/test_krr_approx.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_krr_approx.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -12,15 +16,65 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="krr_approx.py" pinned="false" current-in-tab="true">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="krr_approx.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2492">
-              <caret line="200" column="88" lean-forward="true" selection-start-line="200" selection-start-column="88" selection-end-line="200" selection-end-column="88" />
+            <state relative-caret-position="-270">
+              <caret line="67" column="32" lean-forward="true" selection-start-line="67" selection-start-column="32" selection-end-line="67" selection-end-column="32" />
               <folding>
                 <element signature="e#463#481#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="316">
+              <caret line="129" lean-forward="true" selection-start-line="129" selection-end-line="129" />
+              <folding>
+                <element signature="e#145#163#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test_sobolev_alignment.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test/test_sobolev_alignment.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="751">
+              <caret line="160" column="61" selection-start-line="160" selection-start-column="61" selection-end-line="160" selection-end-column="61" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+                <element signature="e#907#932#0" />
+                <element signature="e#1224#1404#0" />
+                <element signature="e#1409#1509#0" />
+                <element signature="e#1573#1833#0" />
+                <element signature="e#2097#2557#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test_krr_approx.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test/test_krr_approx.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="291">
+              <caret line="42" column="30" lean-forward="true" selection-start-line="41" selection-start-column="4" selection-end-line="42" selection-end-column="30" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sobolev_alignment/__init__.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="15">
+              <caret line="1" column="40" selection-start-line="1" selection-start-column="40" selection-end-line="1" selection-end-column="40" />
             </state>
           </provider>
         </entry>
@@ -30,18 +84,6 @@
           <provider selected="true" editor-type-id="text-editor">
             <state>
               <caret lean-forward="true" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test_krr_approx.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test/test_krr_approx.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="909">
-              <caret line="253" column="45" selection-start-line="253" selection-start-column="45" selection-end-line="253" selection-end-column="45" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -67,13 +109,16 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
-        <option value="$PROJECT_DIR$/test/test_krr_approx.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
+        <option value="$PROJECT_DIR$/test/test_krr_approx.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/__init__.py" />
+        <option value="$PROJECT_DIR$/test/test_sobolev_alignment.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" fullScreen="true">
+  <component name="ProjectFrameBounds">
     <option name="x" value="1440" />
     <option name="y" value="25" />
     <option name="width" value="1920" />
@@ -157,7 +202,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1440" y="0" width="1920" height="1080" extended-state="0" />
+    <frame x="1440" y="25" width="1920" height="1055" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.115625" />
@@ -184,10 +229,27 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="1" />
+      <option name="time" value="6" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="285">
+          <caret line="19" column="3" lean-forward="true" selection-start-line="19" selection-start-column="3" selection-end-line="19" selection-end-column="3" />
+          <folding>
+            <element signature="e#463#481#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/kernel_operations.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret lean-forward="true" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
@@ -201,9 +263,6 @@
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/sobolev_alignment/__init__.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/kernel_operations.py">
       <provider selected="true" editor-type-id="text-editor">
         <state>
@@ -211,22 +270,54 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1" column="40" selection-start-line="1" selection-start-column="40" selection-end-line="1" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/test/test_krr_approx.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="909">
-          <caret line="253" column="45" selection-start-line="253" selection-start-column="45" selection-end-line="253" selection-end-column="45" />
+        <state relative-caret-position="291">
+          <caret line="42" column="30" lean-forward="true" selection-start-line="41" selection-start-column="4" selection-end-line="42" selection-end-column="30" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/test/test_sobolev_alignment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="751">
+          <caret line="160" column="61" selection-start-line="160" selection-start-column="61" selection-end-line="160" selection-end-column="61" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#907#932#0" />
+            <element signature="e#1224#1404#0" />
+            <element signature="e#1409#1509#0" />
+            <element signature="e#1573#1833#0" />
+            <element signature="e#2097#2557#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2492">
-          <caret line="200" column="88" lean-forward="true" selection-start-line="200" selection-start-column="88" selection-end-line="200" selection-end-column="88" />
+        <state relative-caret-position="-270">
+          <caret line="67" column="32" lean-forward="true" selection-start-line="67" selection-start-column="32" selection-end-line="67" selection-end-column="32" />
           <folding>
             <element signature="e#463#481#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="316">
+          <caret line="129" lean-forward="true" selection-start-line="129" selection-end-line="129" />
+          <folding>
+            <element signature="e#145#163#0" expanded="true" />
           </folding>
         </state>
       </provider>

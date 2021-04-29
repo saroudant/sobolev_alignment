@@ -1,0 +1,164 @@
+import numpy as np
+import pandas as pd
+import scipy
+import torch
+import pytest
+from anndata import AnnData
+from sklearn.datasets import make_spd_matrix
+from joblib import Parallel, delayed
+
+from sobolev_alignment import SobolevAlignment
+
+n_samples = 500
+n_samples_valid = 50
+n_genes = 50
+n_batches = 3
+
+@pytest.fixture(scope='module')
+def source_data():
+    poisson_coef = np.random.randint(1, 25, size=n_genes)
+    return np.concatenate(
+        [np.random.poisson(lam=l, size=n_samples).reshape(-1, 1) for l in poisson_coef],
+        axis=1
+    )
+
+@pytest.fixture(scope='module')
+def target_data():
+    poisson_coef = np.random.randint(1, 25, size=n_genes)
+    return np.concatenate(
+        [np.random.poisson(lam=l, size=n_samples).reshape(-1, 1) for l in poisson_coef],
+        axis=1
+    )
+
+@pytest.fixture(scope='module')
+def source_batch():
+    return np.random.choice(np.arange(n_batches).astype(str), size=n_samples)
+
+@pytest.fixture(scope='module')
+def target_batch():
+    return np.random.choice(np.arange(n_batches).astype(str), size=n_samples)
+
+@pytest.fixture(scope='module')
+def source_anndata(source_data, source_batch):
+    return AnnData(
+        source_data,
+        obs=pd.DataFrame(source_batch, columns=['batch'])
+    )
+
+@pytest.fixture(scope='module')
+def target_anndata(target_data, target_batch):
+    return AnnData(
+        target_data,
+        obs=pd.DataFrame(target_batch, columns=['batch'])
+    )
+
+@pytest.fixture(scope='module')
+def source_scvi_params():
+    return {
+        'model': {
+            'dispersion': 'gene-cell',
+            'gene_likelihood': 'zinb',
+            'n_hidden': 20,
+            'n_latent': 5,
+            'n_layers': 1,
+            'dropout_rate': 0.1
+        },
+        'plan': {
+            'lr': 0.005,
+            'weight_decay': 0.01,
+            'reduce_lr_on_plateau': True,
+        },
+        'train': {
+            'early_stopping': True,
+            'max_epochs': 10
+        }
+    }
+
+@pytest.fixture(scope='module')
+def target_scvi_params():
+    return {
+        'model': {
+            'dispersion': 'gene-cell',
+            'gene_likelihood': 'zinb',
+            'n_hidden': 20,
+            'n_latent': 5,
+            'n_layers': 1,
+            'dropout_rate': 0.1
+        },
+        'plan': {
+            'lr': 0.005,
+            'weight_decay': 0.01,
+            'reduce_lr_on_plateau': True,
+        },
+        'train': {
+            'early_stopping': True,
+            'max_epochs': 10
+        }
+    }
+
+
+class TestSobolevAlignment():
+
+    @pytest.fixture(scope='class')
+    def sobolev_alignment_raw(
+            self,
+            source_scvi_params,
+            target_scvi_params
+    ):
+        return SobolevAlignment(
+            source_scvi_params,
+            target_scvi_params
+        )
+
+    @pytest.fixture(scope='class')
+    def sobolev_alignment_batch(
+            self,
+            source_scvi_params,
+            target_scvi_params
+    ):
+        return SobolevAlignment(
+            source_scvi_params,
+            target_scvi_params
+        )
+
+    @pytest.fixture(scope='class')
+    def scvi_raw_trained(
+            self,
+            source_anndata,
+            target_anndata,
+            sobolev_alignment_raw
+    ):
+        return sobolev_alignment_raw.fit(
+            X_source=source_anndata,
+            X_target=target_anndata,
+            source_batch_name=None,
+            target_batch_name=None
+        )
+
+    @pytest.fixture(scope='class')
+    def scvi_batch_trained(
+            self,
+            source_anndata,
+            target_anndata,
+            sobolev_alignment_batch
+    ):
+        return sobolev_alignment_batch.fit(
+            X_source=source_anndata,
+            X_target=target_anndata,
+            source_batch_name='batch',
+            target_batch_name='batch'
+        )
+
+
+    def test_training_scvi_batch_trained(self, scvi_batch_trained):
+        assert type(scvi_batch_trained.scvi_models) == dict
+        for x, model in scvi_batch_trained.scvi_models.items():
+            assert model.history['train_loss_epoch'].values[-1,0] < model.history['train_loss_epoch'].values[0,0]
+
+
+    def test_training_scvi_raw_trained(self, scvi_raw_trained):
+        assert type(scvi_raw_trained.scvi_models) == dict
+        for x, model in scvi_raw_trained.scvi_models.items():
+            assert model.history['train_loss_epoch'].values[-1,0] < model.history['train_loss_epoch'].values[0,0]
+
+

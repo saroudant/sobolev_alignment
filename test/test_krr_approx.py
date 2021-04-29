@@ -4,7 +4,7 @@ import torch
 import pytest
 from joblib import Parallel, delayed
 
-from sobolev_alignment.krr_approx import KRRApprox
+from sobolev_alignment import KRRApprox
 
 n_samples = 2000
 n_samples_valid = 50
