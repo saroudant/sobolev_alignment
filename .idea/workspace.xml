@@ -2,11 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="57b26846-65b7-404b-a7df-c0198e8b0d46" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/test_sobolev_alignment.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sobolev_alignment/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_krr_approx.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_krr_approx.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/test_sobolev_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_sobolev_alignment.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -32,10 +31,22 @@
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="316">
-              <caret line="129" lean-forward="true" selection-start-line="129" selection-end-line="129" />
+            <state relative-caret-position="531">
+              <caret line="161" column="59" selection-start-line="161" selection-start-column="59" selection-end-line="161" selection-end-column="59" />
               <folding>
                 <element signature="e#145#163#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="generate_artificial_sample.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="676">
+              <caret line="75" column="41" selection-start-line="75" selection-start-column="41" selection-end-line="75" selection-end-column="41" />
+              <folding>
+                <element signature="e#125#137#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -44,15 +55,14 @@
       <file leaf-file-name="test_sobolev_alignment.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/test/test_sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="751">
-              <caret line="160" column="61" selection-start-line="160" selection-start-column="61" selection-end-line="160" selection-end-column="61" />
+            <state relative-caret-position="225">
+              <caret line="15" column="27" selection-start-line="15" selection-start-column="27" selection-end-line="15" selection-end-column="27" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
                 <element signature="e#907#932#0" />
                 <element signature="e#1224#1404#0" />
                 <element signature="e#1409#1509#0" />
                 <element signature="e#1573#1833#0" />
-                <element signature="e#2097#2557#0" />
               </folding>
             </state>
           </provider>
@@ -101,6 +111,7 @@
     <findStrings>
       <find>M =</find>
       <find>kernel</find>
+      <find>batch_name</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -113,6 +124,7 @@
         <option value="$PROJECT_DIR$/test/test_krr_approx.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/__init__.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
         <option value="$PROJECT_DIR$/test/test_sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
       </list>
@@ -287,21 +299,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/test_sobolev_alignment.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="751">
-          <caret line="160" column="61" selection-start-line="160" selection-start-column="61" selection-end-line="160" selection-end-column="61" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#907#932#0" />
-            <element signature="e#1224#1404#0" />
-            <element signature="e#1409#1509#0" />
-            <element signature="e#1573#1833#0" />
-            <element signature="e#2097#2557#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-270">
@@ -312,10 +309,34 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="676">
+          <caret line="75" column="41" selection-start-line="75" selection-start-column="41" selection-end-line="75" selection-end-column="41" />
+          <folding>
+            <element signature="e#125#137#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/test_sobolev_alignment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="225">
+          <caret line="15" column="27" selection-start-line="15" selection-start-column="27" selection-end-line="15" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#907#932#0" />
+            <element signature="e#1224#1404#0" />
+            <element signature="e#1409#1509#0" />
+            <element signature="e#1573#1833#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="129" lean-forward="true" selection-start-line="129" selection-end-line="129" />
+        <state relative-caret-position="531">
+          <caret line="161" column="59" selection-start-line="161" selection-start-column="59" selection-end-line="161" selection-end-column="59" />
           <folding>
             <element signature="e#145#163#0" expanded="true" />
           </folding>

@@ -13,6 +13,7 @@ n_samples = 500
 n_samples_valid = 50
 n_genes = 50
 n_batches = 3
+n_artificial_samples = 2000
 
 @pytest.fixture(scope='module')
 def source_data():
@@ -146,19 +147,27 @@ class TestSobolevAlignment():
             X_source=source_anndata,
             X_target=target_anndata,
             source_batch_name='batch',
-            target_batch_name='batch'
+            target_batch_name='batch',
+            n_artificial_samples=n_artificial_samples
         )
 
 
-    def test_training_scvi_batch_trained(self, scvi_batch_trained):
+    def test_training_scvi_batch_trained(
+            self,
+            scvi_batch_trained,
+    ):
         assert type(scvi_batch_trained.scvi_models) == dict
         for x, model in scvi_batch_trained.scvi_models.items():
             assert model.history['train_loss_epoch'].values[-1,0] < model.history['train_loss_epoch'].values[0,0]
 
+        for x in scvi_batch_trained.artificial_samples_:
+            assert scvi_batch_trained.artificial_samples_[x].shape[0] == n_artificial_samples
+            assert scvi_batch_trained.artificial_samples_[x].shape[1] == n_genes
 
-    def test_training_scvi_raw_trained(self, scvi_raw_trained):
-        assert type(scvi_raw_trained.scvi_models) == dict
-        for x, model in scvi_raw_trained.scvi_models.items():
-            assert model.history['train_loss_epoch'].values[-1,0] < model.history['train_loss_epoch'].values[0,0]
+
+    # def test_training_scvi_raw_trained(self, scvi_raw_trained):
+    #     assert type(scvi_raw_trained.scvi_models) == dict
+    #     for x, model in scvi_raw_trained.scvi_models.items():
+    #         assert model.history['train_loss_epoch'].values[-1,0] < model.history['train_loss_epoch'].values[0,0]
 
 
