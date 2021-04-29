@@ -15,6 +15,7 @@ References
 """
 
 import numpy as np
+import pandas as pd
 from pickle import load, dump
 import scipy
 from joblib import Parallel, delayed
@@ -23,6 +24,7 @@ from anndata import AnnData
 import scvi
 
 from .generate_artificial_sample import parallel_generate_samples
+from .krr_approx import KRRApprox
 
 
 class SobolevAlignment:
@@ -61,8 +63,10 @@ class SobolevAlignment:
         }
 
         # KRR params
-        self.source_krr_params = source_krr_params
-        self.target_krr_params = target_krr_params
+        self.krr_params = {
+            'source': source_krr_params,
+            'target': target_krr_params
+        }
 
         # Create scVI models
         self.n_jobs = 1
@@ -97,7 +101,11 @@ class SobolevAlignment:
         self._train_scvi_modules()
 
         # Approximation by kernel machines
-        self.artificial_samples_ = self._generate_artificial_samples(n_artificial_samples)
+        self.artificial_samples_, self.artificial_batches_ = self._generate_artificial_samples(n_artificial_samples)
+        self.artificial_embeddings_ = {
+            x: self._embed_artificial_samples(x)
+            for x in ['source', 'target']
+        }
         self._approximate_encoders()
 
         # Comparison and alignment
@@ -131,7 +139,6 @@ class SobolevAlignment:
 
         return True
 
-
     def _generate_artificial_samples(
             self,
             n_artificial_samples: int
@@ -152,10 +159,14 @@ class SobolevAlignment:
         """
 
         lib_size = self._compute_batch_library_size()
-        return {
+        artificial_batches = {
+            x: self._sample_batches(n_artificial_samples=n_artificial_samples, data=x)
+            for x in ['source', 'target']
+        }
+        artificial_samples = {
             x: parallel_generate_samples(
                 sample_size=n_artificial_samples,
-                batch_names=self._sample_batches(n_artificial_samples=n_artificial_samples, data=x),
+                batch_names=artificial_batches[x],
                 lib_size=lib_size[x],
                 model=self.scvi_models[x],
                 return_dist=False,
@@ -164,7 +175,7 @@ class SobolevAlignment:
             )
             for x in ['source', 'target']
         }
-
+        return artificial_samples, artificial_batches
 
     def _compute_batch_library_size(self):
         if self.batch_name['source'] is None or self.batch_name['target'] is None:
@@ -199,10 +210,41 @@ class SobolevAlignment:
             size=int(n_artificial_samples)
         )
 
+    def _embed_artificial_samples(self, data: str):
+        # Format artificial samples to be fed into scVI.
+        x_train = self.artificial_samples_[data]
+        train_obs = pd.DataFrame(
+            np.array(self.artificial_batches_[data]),
+            columns=[self.batch_name[data]]
+        )
+        x_train_an = AnnData(x_train,
+                             obs=train_obs)
+        x_train_an.layers['counts'] = x_train_an.X.copy()
+
+        # Forward these formatted samples
+        return self.scvi_models[data].get_latent_representation(x_train_an)
 
     def _approximate_encoders(self):
-        pass
+        """
+        Approximate the encoder by a KRR regression
+        """
+        self.approximate_krr_regressions_ = {
+            x:
+                [
+                    KRRApprox(**self.krr_params[x])
+                    for _ in range(self.scvi_params[x]['model']['n_latent'])
+                ]
+            for x in ['source', 'target']
+        }
 
+        for x in ['source', 'target']:
+            for latent_idx in range(self.scvi_params[x]['model']['n_latent']):
+                self.approximate_krr_regressions_[x][latent_idx].fit(
+                    self.artificial_samples_[x],
+                    self.artificial_embeddings_[x][:,latent_idx]
+                )
+
+        return True
 
     def _compare_approximated_encoders(self):
         pass

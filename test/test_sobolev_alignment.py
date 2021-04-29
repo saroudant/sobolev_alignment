@@ -14,6 +14,7 @@ n_samples_valid = 50
 n_genes = 50
 n_batches = 3
 n_artificial_samples = 2000
+n_latent = 5
 
 @pytest.fixture(scope='module')
 def source_data():
@@ -60,7 +61,7 @@ def source_scvi_params():
             'dispersion': 'gene-cell',
             'gene_likelihood': 'zinb',
             'n_hidden': 20,
-            'n_latent': 5,
+            'n_latent': n_latent,
             'n_layers': 1,
             'dropout_rate': 0.1
         },
@@ -82,7 +83,7 @@ def target_scvi_params():
             'dispersion': 'gene-cell',
             'gene_likelihood': 'zinb',
             'n_hidden': 20,
-            'n_latent': 5,
+            'n_latent': n_latent,
             'n_layers': 1,
             'dropout_rate': 0.1
         },
@@ -164,6 +165,13 @@ class TestSobolevAlignment():
             assert scvi_batch_trained.artificial_samples_[x].shape[0] == n_artificial_samples
             assert scvi_batch_trained.artificial_samples_[x].shape[1] == n_genes
 
+        for x in scvi_batch_trained.artificial_embeddings_:
+            assert scvi_batch_trained.artificial_embeddings_[x].shape[0] == n_artificial_samples
+            assert scvi_batch_trained.artificial_embeddings_[x].shape[1] == n_latent
+
+    def test_KRR_scvi_trained(self, scvi_batch_trained):
+        for x in scvi_batch_trained.artificial_samples_:
+            len(scvi_batch_trained.approximate_krr_regressions_[x]) == n_latent
 
     # def test_training_scvi_raw_trained(self, scvi_raw_trained):
     #     assert type(scvi_raw_trained.scvi_models) == dict
