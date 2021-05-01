@@ -42,8 +42,8 @@ class SobolevAlignment:
             self,
             source_scvi_params: dict = None,
             target_scvi_params: dict = None,
-            source_krr_params: dict = {},
-            target_krr_params: dict = {},
+            source_krr_params: dict = None,
+            target_krr_params: dict = None,
             n_jobs=1
     ):
         """
@@ -64,13 +64,22 @@ class SobolevAlignment:
 
         # KRR params
         self.krr_params = {
-            'source': source_krr_params,
-            'target': target_krr_params
+            'source': source_krr_params if source_krr_params is not None else {'method': 'falkon'},
+            'target': target_krr_params if target_krr_params is not None else {'method': 'falkon'}
         }
+        self._check_same_kernel() # Check whether source and target have the same kernel
 
         # Create scVI models
-        self.n_jobs = 1
+        self.n_jobs = n_jobs
 
+    def _check_same_kernel(self):
+        """
+        Same kernel has to be used for source and kernel KRR.
+        """
+        if 'kernel' in self.krr_params['source'] or 'kernel' in self.krr_params['target']:
+            assert self.krr_params['source']['kernel'] == self.krr_params['target']['kernel']
+        if 'kernel_params' in  self.krr_params['source'] or 'kernel_params' in  self.krr_params['target']:
+            assert self.krr_params['source']['kernel_params'] == self.krr_params['target']['kernel_params']
 
     def fit(
             self,
@@ -106,6 +115,11 @@ class SobolevAlignment:
             x: self._embed_artificial_samples(x)
             for x in ['source', 'target']
         }
+        for x in self.krr_params:
+            if self.krr_params[x]['method'] == 'falkon':
+                print('TORCH ALL THE WAY DOWN')
+                self.artificial_samples_[x] = torch.Tensor(self.artificial_samples_[x])
+                self.artificial_embeddings_[x] = torch.Tensor(self.artificial_embeddings_[x])
         self._approximate_encoders()
 
         # Comparison and alignment
@@ -170,7 +184,7 @@ class SobolevAlignment:
                 lib_size=lib_size[x],
                 model=self.scvi_models[x],
                 return_dist=False,
-                batch_size=min(10**3, n_artificial_samples),
+                batch_size=min(10**4, n_artificial_samples),
                 n_jobs=self.n_jobs
             )
             for x in ['source', 'target']
@@ -229,26 +243,59 @@ class SobolevAlignment:
         Approximate the encoder by a KRR regression
         """
         self.approximate_krr_regressions_ = {
-            x:
-                [
-                    KRRApprox(**self.krr_params[x])
-                    for _ in range(self.scvi_params[x]['model']['n_latent'])
-                ]
+            x: KRRApprox(**self.krr_params[x])
             for x in ['source', 'target']
         }
 
         for x in ['source', 'target']:
-            for latent_idx in range(self.scvi_params[x]['model']['n_latent']):
-                self.approximate_krr_regressions_[x][latent_idx].fit(
-                    self.artificial_samples_[x],
-                    self.artificial_embeddings_[x][:,latent_idx]
-                )
+            self.approximate_krr_regressions_[x].fit(
+                self.artificial_samples_[x],
+                self.artificial_embeddings_[x]
+            )
 
         return True
 
     def _compare_approximated_encoders(self):
-        pass
+        self.M_X = self._compute_cosine_sim_intra_dataset('source')
+        self.M_Y = self._compute_cosine_sim_intra_dataset('target')
+        self.M_XY = self._compute_cross_cosine_sim()
 
+        sqrt_inv_M_X = np.linalg.inv(scipy.linalg.sqrtm(self.M_X))
+        sqrt_inv_M_Y = np.linalg.inv(scipy.linalg.sqrtm(self.M_Y))
+        self.cosine_sim = sqrt_inv_M_X.dot(self.M_XY).dot(sqrt_inv_M_Y)
+
+
+    def _compute_cosine_sim_intra_dataset(
+            self,
+            data : str
+    ):
+        """
+        Compute M_X if data='source', or M_Y if data='target'.
+
+        :param data:
+        :return:
+        """
+        krr_clf = self.approximate_krr_regressions_[data]
+        K = krr_clf.kernel_(
+            krr_clf.training_data_[krr_clf.ridge_samples_idx_],
+            krr_clf.training_data_[krr_clf.ridge_samples_idx_]
+        )
+        K = torch.Tensor(K)
+        return krr_clf.sample_weights_.T.matmul(K).matmul(krr_clf.sample_weights_)
+
+
+    def _compute_cross_cosine_sim(self):
+        K_XY = self.approximate_krr_regressions_['target'].kernel_(
+            self.approximate_krr_regressions_['source'].training_data_[self.approximate_krr_regressions_['source'].ridge_samples_idx_],
+            self.approximate_krr_regressions_['target'].training_data_[self.approximate_krr_regressions_['target'].ridge_samples_idx_]
+        )
+        K_XY = torch.Tensor(K_XY)
+        return self.approximate_krr_regressions_['source'].sample_weights_.T.matmul(K_XY).matmul(self.approximate_krr_regressions_['target'].sample_weights_)
 
     def _compute_principal_vectors(self):
-        pass
+        cosine_svd = np.linalg.svd(self.cosine_sim, full_matrices=False)
+        self.principal_angles = cosine_svd[1]
+        self.untransformed_rotations_ = {
+            'source': cosine_svd[0],
+            'target': cosine_svd[2].T
+        }

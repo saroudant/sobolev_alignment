@@ -9,6 +9,7 @@ from sobolev_alignment import KRRApprox
 n_samples = 2000
 n_samples_valid = 50
 n_genes = 100
+n_latent = 7
 penalization = .0001
 pearson_threshold = 0.99
 M = 500
@@ -23,7 +24,7 @@ def valid_input():
 
 @pytest.fixture(scope='module')
 def embedding_proj():
-    return torch.normal(0,1, size=(n_genes,1))
+    return torch.normal(0,1, size=(n_genes,n_latent))
 
 @pytest.fixture(scope='module')
 def embedding(input, embedding_proj):

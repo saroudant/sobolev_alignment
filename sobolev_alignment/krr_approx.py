@@ -190,16 +190,25 @@ class KRRApprox:
 
 
     def _process_coef_ridge_sklearn(self):
-        self.sample_weights_ = self.ridge_clf_.dual_coef_
+        self.sample_weights_ = torch.Tensor(self.ridge_clf_.dual_coef_)
         self.ridge_samples_idx_ = np.arange(self.training_data_.shape[0])
 
     def _process_coef_ridge_falkon(self):
         self.sample_weights_ = self.ridge_clf_.alpha_
 
         # Finds training_idxs by matching product over rows
-        train_product = np.prod(self.training_data_.detach().numpy() + 1.05, axis=1)
-        ny_product = np.prod(self.ridge_clf_.ny_points_.detach().numpy() + 1.05, axis=1)
-        self.ridge_samples_idx_ = [np.where(train_product == x)[0] for x in ny_product]
+        mask = - torch.min(self.training_data_)
+        mask = np.random.uniform(mask, mask+0.2, self.training_data_.shape[1])
+        print(mask)
+        self._train_product = np.sum(np.log(self.training_data_.detach().numpy() + mask), axis=1)
+        self._ny_product = np.sum(np.log(self.ridge_clf_.ny_points_.detach().numpy() + mask), axis=1)
+        self.ridge_samples_idx_ = [np.where(self._train_product == x)[0] for x in self._ny_product]
+        print(self.ridge_samples_idx_)
+        print('\n\n\n')
+        print(self._train_product)
+        print('\n\n\n')
+        print(self._ny_product)
+        print('\n\n\n')
         for x in self.ridge_samples_idx_:
             if x.shape[0] > 1:
                 assert False

@@ -1,0 +1,30 @@
+============================= test session starts ==============================
+platform linux -- Python 3.8.8, pytest-6.2.3, py-1.10.0, pluggy-0.13.1
+rootdir: /science/s.mourragui/sobolev_alignment/src/sobolev_alignment, configfile: pytest.ini
+collected 13 items
+
+test/test_krr_approx.py ...........                                      [ 84%]
+test/test_sobolev_alignment.py ..                                        [100%]
+
+=============================== warnings summary ===============================
+../../../../../home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/_pytest/config/__init__.py:1183
+  /home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/_pytest/config/__init__.py:1183: PytestDeprecationWarning: The --strict option is deprecated, use --strict-markers instead.
+    self.issue_config_time_warning(
+
+../../../../../home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/falkon/utils/switches.py:21
+test/test_krr_approx.py::TestKRRApprox::test_rbf_falkon_fit
+test/test_krr_approx.py::TestKRRApprox::test_matern_falkon_fit
+test/test_krr_approx.py::TestKRRApprox::test_laplacian_falkon_fit
+test/test_krr_approx.py::TestKRRApprox::test_ridge_coef_falkon_fit
+test/test_sobolev_alignment.py::TestSobolevAlignment::test_training_scvi_batch_trained
+  /home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/falkon/utils/switches.py:21: UserWarning: Failed to initialize CUDA library; falling back to CPU. Set 'use_cpu' to True to avoid this warning.
+    warnings.warn(get_error_str("CUDA", None))
+
+test/test_sobolev_alignment.py::TestSobolevAlignment::test_training_scvi_batch_trained
+test/test_sobolev_alignment.py::TestSobolevAlignment::test_training_scvi_batch_trained
+test/test_sobolev_alignment.py::TestSobolevAlignment::test_training_scvi_batch_trained
+  /home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/anndata/_core/anndata.py:119: ImplicitModificationWarning: Transforming to str index.
+    warnings.warn("Transforming to str index.", ImplicitModificationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/warnings.html
+======================= 13 passed, 10 warnings in 22.21s =======================

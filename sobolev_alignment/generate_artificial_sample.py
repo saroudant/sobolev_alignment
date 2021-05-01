@@ -75,7 +75,7 @@ def parallel_generate_samples(sample_size,
                               return_dist=False,
                               batch_size=10**3,
                               n_jobs=1):
-    results = Parallel(n_jobs=n_jobs, verbose=10)(
+    results = Parallel(n_jobs=n_jobs, verbose=1)(
             delayed(generate_samples)(batch_size, batch_names[i:i+batch_size], lib_size, model, return_dist)
             for i in range(0,sample_size,batch_size)
     )

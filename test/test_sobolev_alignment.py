@@ -171,7 +171,7 @@ class TestSobolevAlignment():
 
     def test_KRR_scvi_trained(self, scvi_batch_trained):
         for x in scvi_batch_trained.artificial_samples_:
-            len(scvi_batch_trained.approximate_krr_regressions_[x]) == n_latent
+            assert scvi_batch_trained.approximate_krr_regressions_[x].sample_weights_.shape[1] == n_latent
 
     # def test_training_scvi_raw_trained(self, scvi_raw_trained):
     #     assert type(scvi_raw_trained.scvi_models) == dict
