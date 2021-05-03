@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     # url="https://github.com/NKI-CCB/TRANSACT",
     packages=setuptools.find_packages(),
-    install_requires=['numpy', 'scipy', 'pandas', 'matplotlib', 'scikit-learn'],
+    install_requires=['numpy', 'scipy', 'pandas', 'matplotlib', 'scikit-learn', 'torch'],
     python_requires='>=3.8',
     classifiers=(
         "Programming Language :: Python :: 3",

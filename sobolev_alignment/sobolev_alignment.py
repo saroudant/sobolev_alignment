@@ -14,11 +14,13 @@ References
 -------
 """
 
+import os, sys
 import numpy as np
 import pandas as pd
 from pickle import load, dump
 import scipy
 from joblib import Parallel, delayed
+import matplotlib.pyplot as plt
 import torch
 from anndata import AnnData
 import scvi
@@ -260,10 +262,9 @@ class SobolevAlignment:
         self.M_Y = self._compute_cosine_sim_intra_dataset('target')
         self.M_XY = self._compute_cross_cosine_sim()
 
-        sqrt_inv_M_X = np.linalg.inv(scipy.linalg.sqrtm(self.M_X))
-        sqrt_inv_M_Y = np.linalg.inv(scipy.linalg.sqrtm(self.M_Y))
+        sqrt_inv_M_X = scipy.linalg.sqrtm(np.linalg.pinv(self.M_X))
+        sqrt_inv_M_Y = scipy.linalg.sqrtm(np.linalg.pinv(self.M_Y))
         self.cosine_sim = sqrt_inv_M_X.dot(self.M_XY).dot(sqrt_inv_M_Y)
-
 
     def _compute_cosine_sim_intra_dataset(
             self,
@@ -283,7 +284,6 @@ class SobolevAlignment:
         K = torch.Tensor(K)
         return krr_clf.sample_weights_.T.matmul(K).matmul(krr_clf.sample_weights_)
 
-
     def _compute_cross_cosine_sim(self):
         K_XY = self.approximate_krr_regressions_['target'].kernel_(
             self.approximate_krr_regressions_['source'].training_data_[self.approximate_krr_regressions_['source'].ridge_samples_idx_],
@@ -299,3 +299,62 @@ class SobolevAlignment:
             'source': cosine_svd[0],
             'target': cosine_svd[2].T
         }
+
+    def save(
+            self,
+            folder: str = '.'
+    ):
+        if not os.path.exists(folder) and not os.path.isdir(folder):
+            os.mkdir(folder)
+
+        # Dump scVI models
+        for x in self.scvi_models:
+            dump(
+                self.scvi_models[x],
+                open('%s/scvi_model_%s.pkl'%(folder, x), 'wb')
+            )
+
+        # Dump the KRR:
+        for x in self.approximate_krr_regressions_:
+            self.approximate_krr_regressions_[x].save('%s/krr_approx_%s'%(folder, x))
+
+        # Save params
+        pd.DataFrame(self.krr_params).to_csv('%s/krr_params.csv'%(folder))
+        dump(self.krr_params, open('%s/krr_params.pkl'%(folder), 'wb'))
+
+        for param_t in ['model', 'plan', 'train']:
+            df = pd.DataFrame([self.scvi_params[x][param_t] for x in ['source', 'target']])
+            df.to_csv('%s/scvi_params_%s.csv'%(folder, param_t))
+        dump(self.scvi_params, open('%s/scvi_params.pkl'%(folder), 'wb'))
+
+        # Save results
+        torch.save(self.M_X, open('%s/alignment_M_X.pt'%(folder), 'wb'))
+        torch.save(self.M_Y, open('%s/alignment_M_Y.pt'%(folder), 'wb'))
+        torch.save(self.M_XY, open('%s/alignment_M_XY.pt'%(folder), 'wb'))
+        np.save(open('%s/alignment_cosine_sim.npy'%(folder), 'wb'), self.cosine_sim)
+        pd.DataFrame(self.cosine_sim).to_csv('%s/alignment_cosine_sim.csv'%(folder))
+        np.save(open('%s/alignment_principal_angles.npy'%(folder), 'wb'), self.principal_angles)
+        pd.DataFrame(self.principal_angles).to_csv('%s/alignment_principal_angles.csv'%(folder))
+
+
+    def plot_training_metrics(self, folder: str='.'):
+        """
+        Plot the different training metric for the source and target scVI modules.
+
+
+        """
+
+        if not os.path.exists(folder) and not os.path.isdir(folder):
+            os.mkdir(folder)
+
+        for x in self.scvi_models:
+            for metric in self.scvi_models[x].history:
+                plt.figure(figsize=(6, 4))
+                plt.plot(self.scvi_models[x].history[metric])
+                plt.xlabel('Epoch', fontsize=20, color='black')
+                plt.ylabel(metric, fontsize=20, color='black')
+                plt.xticks(fontsize=15)
+                plt.yticks(fontsize=15)
+                plt.tight_layout()
+                plt.savefig('%s/%s_model_train_%s.png'%(folder, x, metric), dpi=300)
+                plt.show()

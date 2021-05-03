@@ -19,10 +19,9 @@ References
 -------
 """
 
+import os, sys
 import numpy as np
 from pickle import load, dump
-import scipy
-from joblib import Parallel, delayed
 import torch
 
 # Falkon import
@@ -160,7 +159,6 @@ class KRRApprox:
 
         return self
 
-
     def _setup_clf(self):
         if self.method.lower() == 'sklearn':
             self._setup_sklearn_clf()
@@ -171,7 +169,6 @@ class KRRApprox:
     def _setup_sklearn_clf(self):
         self.ridge_clf_ = KernelRidge(kernel='precomputed',alpha=self.penalization)
         return True
-
 
     def _setup_falkon_clf(self):
         self.ridge_clf_ = Falkon(
@@ -188,7 +185,6 @@ class KRRApprox:
         elif self.method.lower() == 'falkon':
             self._process_coef_ridge_falkon()
 
-
     def _process_coef_ridge_sklearn(self):
         self.sample_weights_ = torch.Tensor(self.ridge_clf_.dual_coef_)
         self.ridge_samples_idx_ = np.arange(self.training_data_.shape[0])
@@ -199,22 +195,14 @@ class KRRApprox:
         # Finds training_idxs by matching product over rows
         mask = - torch.min(self.training_data_)
         mask = np.random.uniform(mask, mask+0.2, self.training_data_.shape[1])
-        print(mask)
         self._train_product = np.sum(np.log(self.training_data_.detach().numpy() + mask), axis=1)
         self._ny_product = np.sum(np.log(self.ridge_clf_.ny_points_.detach().numpy() + mask), axis=1)
         self.ridge_samples_idx_ = [np.where(self._train_product == x)[0] for x in self._ny_product]
-        print(self.ridge_samples_idx_)
-        print('\n\n\n')
-        print(self._train_product)
-        print('\n\n\n')
-        print(self._ny_product)
-        print('\n\n\n')
         for x in self.ridge_samples_idx_:
             if x.shape[0] > 1:
                 assert False
         self.ridge_samples_idx_ = [x[0] for x in self.ridge_samples_idx_]
         assert len(self.ridge_samples_idx_) == self.M
-
 
     def transform(
             self,
@@ -235,3 +223,33 @@ class KRRApprox:
             return self.ridge_clf_.predict(X)
         else:
             raise NotImplementedError('%s not implemented. Choices: sklearn and falkon'%(self.method))
+
+    def save(
+            self,
+            folder:str = '.'
+    ):
+        if not os.path.exists(folder) and not os.path.isdir(folder):
+            os.mkdir(folder)
+
+        # Save params
+        params = {
+            'method': self.method,
+            'kernel': self.kernel_,
+            'M': self.M,
+            'penalization': self.penalization,
+            'use_cpu': self.use_cpu
+        }
+        params.update(self.kernel_params)
+        dump(params, open('%s/params.pkl'%(folder), 'wb'))
+
+        # Save important material:
+        #   - KRR weights
+        #   - Samples used for prediction.
+        dump(self.sample_weights_, open('%s/sample_weights.pkl'%(folder), 'wb'))
+        dump(
+            torch.Tensor(self.training_data_[self.ridge_samples_idx_]),
+            open('%s/sample_weights.pkl'%(folder), 'wb')
+        )
+
+
+
