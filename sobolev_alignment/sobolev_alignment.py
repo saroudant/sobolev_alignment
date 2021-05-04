@@ -232,7 +232,6 @@ class SobolevAlignment:
             np.array(self.artificial_batches_[data]),
             columns=[self.batch_name[data]]
         )
-        if self.
         x_train_an = AnnData(x_train.cpu().detach().numpy(),
                              obs=train_obs)
         x_train_an.layers['counts'] = x_train_an.X.copy()
