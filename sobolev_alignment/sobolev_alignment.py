@@ -89,7 +89,7 @@ class SobolevAlignment:
             X_target: AnnData,
             source_batch_name: str = None,
             target_batch_name: str = None,
-            n_artificial_samples: int = 10e5
+            n_artificial_samples: int = int(10e5)
     ):
         """
         Parameters
@@ -119,7 +119,6 @@ class SobolevAlignment:
         }
         for x in self.krr_params:
             if self.krr_params[x]['method'] == 'falkon':
-                print('TORCH ALL THE WAY DOWN')
                 self.artificial_samples_[x] = torch.Tensor(self.artificial_samples_[x])
                 self.artificial_embeddings_[x] = torch.Tensor(self.artificial_embeddings_[x])
         self._approximate_encoders()
@@ -233,7 +232,7 @@ class SobolevAlignment:
             np.array(self.artificial_batches_[data]),
             columns=[self.batch_name[data]]
         )
-        x_train_an = AnnData(x_train,
+        x_train_an = AnnData(x_train.detach().numpy(),
                              obs=train_obs)
         x_train_an.layers['counts'] = x_train_an.X.copy()
 

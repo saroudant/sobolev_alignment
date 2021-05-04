@@ -60,7 +60,7 @@ def generate_samples(
         mu=dist_param_samples['px_rate'],
         theta=dist_param_samples['px_r'],
         zi_logits=dist_param_samples['px_dropout']
-    ).sample().detach().numpy()
+    ).sample()
 
     if return_dist:
         return dist_param_samples, samples
@@ -82,4 +82,4 @@ def parallel_generate_samples(sample_size,
 
     if return_dist:
         return results
-    return np.concatenate(results)
+    return torch.cat(results)
