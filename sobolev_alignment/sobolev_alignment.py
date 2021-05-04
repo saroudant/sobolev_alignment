@@ -119,8 +119,8 @@ class SobolevAlignment:
         }
         for x in self.krr_params:
             if self.krr_params[x]['method'] == 'falkon':
-                self.artificial_samples_[x] = torch.Tensor(self.artificial_samples_[x])
-                self.artificial_embeddings_[x] = torch.Tensor(self.artificial_embeddings_[x])
+                self.artificial_samples_[x] = torch.Tensor(self.artificial_samples_[x]).cpu()
+                self.artificial_embeddings_[x] = torch.Tensor(self.artificial_embeddings_[x]).cpu()
         self._approximate_encoders()
 
         # Comparison and alignment

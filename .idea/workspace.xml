@@ -16,8 +16,8 @@
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="294">
-              <caret line="233" column="9" selection-start-line="233" selection-start-column="9" selection-end-line="233" selection-end-column="9" />
+            <state relative-caret-position="-594">
+              <caret line="122" column="99" selection-start-line="122" selection-start-column="99" selection-end-line="122" selection-end-column="99" />
             </state>
           </provider>
         </entry>
@@ -69,6 +69,8 @@
       <find>elf</find>
       <find>use</find>
       <find>training_data_</find>
+      <find>artificial_embeddings_</find>
+      <find>_embed_artificial_samples</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -279,8 +281,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="294">
-          <caret line="233" column="9" selection-start-line="233" selection-start-column="9" selection-end-line="233" selection-end-column="9" />
+        <state relative-caret-position="-594">
+          <caret line="122" column="99" selection-start-line="122" selection-start-column="99" selection-end-line="122" selection-end-column="99" />
         </state>
       </provider>
     </entry>
