@@ -237,7 +237,7 @@ class SobolevAlignment:
         x_train_an.layers['counts'] = x_train_an.X.copy()
 
         # Forward these formatted samples
-        return self.scvi_models[data].get_latent_representation(x_train_an)
+        return torch.Tensor(self.scvi_models[data].get_latent_representation(x_train_an))
 
     def _approximate_encoders(self):
         """
