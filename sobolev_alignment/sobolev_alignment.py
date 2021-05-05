@@ -28,6 +28,7 @@ import scvi
 
 from .generate_artificial_sample import parallel_generate_samples
 from .krr_approx import KRRApprox
+from .kernel_operations import mat_inv_sqrt
 
 
 class SobolevAlignment:
@@ -262,8 +263,8 @@ class SobolevAlignment:
         self.M_Y = self._compute_cosine_sim_intra_dataset('target')
         self.M_XY = self._compute_cross_cosine_sim()
 
-        sqrt_inv_M_X = scipy.linalg.sqrtm(np.linalg.pinv(self.M_X))
-        sqrt_inv_M_Y = scipy.linalg.sqrtm(np.linalg.pinv(self.M_Y))
+        sqrt_inv_M_X = mat_inv_sqrt(self.M_X)
+        sqrt_inv_M_Y = mat_inv_sqrt(self.M_Y)
         self.cosine_sim = sqrt_inv_M_X.dot(self.M_XY).dot(sqrt_inv_M_Y)
 
     def _compute_cosine_sim_intra_dataset(
