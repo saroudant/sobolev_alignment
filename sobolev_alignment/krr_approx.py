@@ -64,7 +64,8 @@ class KRRApprox:
             M: int = 100,
             kernel_params: dict = None,
             penalization: float = 10e-6,
-            use_cpu: bool = None
+            use_cpu: bool = None,
+            falkon_options: dict = {},
     ):
         """
         Create a KRRApprox instance that aims at creating one KRR model per
@@ -105,6 +106,7 @@ class KRRApprox:
 
         # Set hardware specifications
         self.use_cpu = use_cpu
+        self.falkon_options = falkon_options
 
 
     def _make_kernel(self):
@@ -175,7 +177,7 @@ class KRRApprox:
             kernel=self.kernel_,
             penalty=self.penalization,
             M=self.M,
-            options=FalkonOptions(use_cpu=self.use_cpu)
+            options=FalkonOptions(use_cpu=self.use_cpu, **self.falkon_options)
         )
         return True
 

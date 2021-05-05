@@ -17,6 +17,7 @@ References
 import os, sys
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from pickle import load, dump
 import scipy
 from joblib import Parallel, delayed
@@ -357,3 +358,24 @@ class SobolevAlignment:
                 plt.tight_layout()
                 plt.savefig('%s/%s_model_train_%s.png'%(folder, x, metric), dpi=300)
                 plt.show()
+
+
+    def plot_cosine_similarity(
+            self,
+            folder: str='.',
+            absolute_cos: bool=False
+    ):
+        if absolute_cos:
+            sns.heatmap(np.abs(self.cosine_sim), cmap='seismic_r', center=0)
+        else:
+            sns.heatmap(self.cosine_sim, cmap='seismic_r', center=0)
+        plt.xticks(fontsize=12, color='black')
+        plt.yticks(fontsize=12, color='black')
+        plt.xlabel('Tumor', fontsize=25, color='black')
+        plt.ylabel('Cell lines', fontsize=25)
+        plt.tight_layout()
+        plt.savefig(
+            '%s/%scosine_similarity.png' % (folder, 'abs_' if absolute_cos else ''),
+            dpi=300
+        )
+        plt.show()
