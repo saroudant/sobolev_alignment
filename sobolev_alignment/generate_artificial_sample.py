@@ -65,7 +65,7 @@ def generate_samples(
     if return_dist:
         return dist_param_samples, samples
     else:
-        return samples
+        return torch.Tensor(samples).cpu()
 
 
 def parallel_generate_samples(sample_size,
