@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="57b26846-65b7-404b-a7df-c0198e8b0d46" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -16,8 +17,8 @@
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="457">
-              <caret line="220" lean-forward="true" selection-start-line="220" selection-end-line="220" />
+            <state relative-caret-position="1522">
+              <caret line="189" column="31" lean-forward="true" selection-start-line="189" selection-start-column="31" selection-end-line="189" selection-end-column="36" />
               <folding>
                 <element signature="e#145#159#0" expanded="true" />
               </folding>
@@ -29,7 +30,7 @@
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="609">
-              <caret line="67" column="42" selection-start-line="67" selection-start-column="42" selection-end-line="67" selection-end-column="42" />
+              <caret line="67" column="22" selection-start-line="67" selection-start-column="22" selection-end-line="67" selection-end-column="22" />
             </state>
           </provider>
         </entry>
@@ -68,7 +69,6 @@
       <find>M =</find>
       <find>kernel</find>
       <find>artificial_samples_</find>
-      <find>parallel_generate_samples</find>
       <find>n_job</find>
       <find>self.n_jobs</find>
       <find>krr_</find>
@@ -80,6 +80,7 @@
       <find>_setup_clf</find>
       <find>krr_params</find>
       <find>batch_name</find>
+      <find>parallel_generate_samples</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -92,8 +93,8 @@
         <option value="$PROJECT_DIR$/sobolev_alignment/__init__.py" />
         <option value="$PROJECT_DIR$/test/test_sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
       </list>
     </option>
@@ -287,8 +288,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="457">
-          <caret line="220" lean-forward="true" selection-start-line="220" selection-end-line="220" />
+        <state relative-caret-position="1522">
+          <caret line="189" column="31" lean-forward="true" selection-start-line="189" selection-start-column="31" selection-end-line="189" selection-end-column="36" />
           <folding>
             <element signature="e#145#159#0" expanded="true" />
           </folding>
@@ -298,7 +299,7 @@
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="609">
-          <caret line="67" column="42" selection-start-line="67" selection-start-column="42" selection-end-line="67" selection-end-column="42" />
+          <caret line="67" column="22" selection-start-line="67" selection-start-column="22" selection-end-line="67" selection-end-column="22" />
         </state>
       </provider>
     </entry>
