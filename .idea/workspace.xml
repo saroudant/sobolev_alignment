@@ -3,8 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="57b26846-65b7-404b-a7df-c0198e8b0d46" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -18,8 +16,8 @@
       <file leaf-file-name="krr_approx.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="607">
-              <caret line="108" column="44" selection-start-line="108" selection-start-column="44" selection-end-line="108" selection-end-column="44" />
+            <state relative-caret-position="501">
+              <caret line="68" column="6" lean-forward="true" selection-start-line="68" selection-start-column="6" selection-end-line="68" selection-end-column="6" />
             </state>
           </provider>
         </entry>
@@ -27,10 +25,8 @@
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <folding>
-                <element signature="e#145#159#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="4535">
+              <caret line="322" column="28" selection-start-line="322" selection-start-column="18" selection-end-line="322" selection-end-column="28" />
             </state>
           </provider>
         </entry>
@@ -64,13 +60,13 @@
       <find>n_job</find>
       <find>self.n_jobs</find>
       <find>krr_</find>
-      <find>krr_params</find>
       <find>elf</find>
       <find>use</find>
       <find>training_data_</find>
       <find>FalkonOptions</find>
       <find>_setup_falkon_clf</find>
       <find>_setup_clf</find>
+      <find>krr_params</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -84,8 +80,8 @@
         <option value="$PROJECT_DIR$/sobolev_alignment/__init__.py" />
         <option value="$PROJECT_DIR$/test/test_sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
       </list>
     </option>
   </component>
@@ -262,17 +258,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#145#159#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="4535">
+          <caret line="322" column="28" selection-start-line="322" selection-start-column="18" selection-end-line="322" selection-end-column="28" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="607">
-          <caret line="108" column="44" selection-start-line="108" selection-start-column="44" selection-end-line="108" selection-end-column="44" />
+        <state relative-caret-position="501">
+          <caret line="68" column="6" lean-forward="true" selection-start-line="68" selection-start-column="6" selection-end-line="68" selection-end-column="6" />
         </state>
       </provider>
     </entry>
