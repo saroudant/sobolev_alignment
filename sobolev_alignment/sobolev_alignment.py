@@ -29,6 +29,7 @@ import scvi
 from .generate_artificial_sample import parallel_generate_samples
 from .krr_approx import KRRApprox
 from .kernel_operations import mat_inv_sqrt
+from .feature_analysis import higher_order_contribution, _compute_offset
 
 
 class SobolevAlignment:
@@ -91,7 +92,10 @@ class SobolevAlignment:
             X_target: AnnData,
             source_batch_name: str = None,
             target_batch_name: str = None,
-            n_artificial_samples: int = int(10e5)
+            n_artificial_samples: int = int(10e5),
+            fit_vae: bool = True,
+            sample_artificial: bool=True,
+            krr_approx: bool=True
     ):
         """
         Parameters
@@ -102,7 +106,6 @@ class SobolevAlignment:
             Target data.
         """
 
-        # Train VAE
         self.training_data = {
             'source': X_source,
             'target': X_target
@@ -111,23 +114,29 @@ class SobolevAlignment:
             'source': source_batch_name,
             'target': target_batch_name
         }
-        self._train_scvi_modules()
+
+        # Train VAE
+        if fit_vae:
+            self._train_scvi_modules()
 
         # Approximation by kernel machines
-        self.artificial_samples_, self.artificial_batches_ = self._generate_artificial_samples(n_artificial_samples)
-        self.artificial_embeddings_ = {
-            x: self._embed_artificial_samples(x)
-            for x in ['source', 'target']
-        }
-        for x in self.krr_params:
-            if self.krr_params[x]['method'] == 'falkon':
-                self.artificial_samples_[x] = torch.Tensor(self.artificial_samples_[x]).cpu()
-                self.artificial_embeddings_[x] = torch.Tensor(self.artificial_embeddings_[x]).cpu()
-        self._approximate_encoders()
+        if sample_artificial:
+            self.artificial_samples_, self.artificial_batches_ = self._generate_artificial_samples(n_artificial_samples)
+            self.artificial_embeddings_ = {
+                x: self._embed_artificial_samples(x)
+                for x in ['source', 'target']
+            }
+            for x in self.krr_params:
+                if self.krr_params[x]['method'] == 'falkon':
+                    self.artificial_samples_[x] = torch.Tensor(self.artificial_samples_[x]).cpu()
+                    self.artificial_embeddings_[x] = torch.Tensor(self.artificial_embeddings_[x]).cpu()
 
-        # Comparison and alignment
-        self._compare_approximated_encoders()
-        self._compute_principal_vectors()
+        if krr_approx:
+            self._approximate_encoders()
+
+            # Comparison and alignment
+            self._compare_approximated_encoders()
+            self._compute_principal_vectors()
 
         return self
 
@@ -175,7 +184,36 @@ class SobolevAlignment:
             Dictionary containing the generated data for both source and target
         """
 
-        lib_size = self._compute_batch_library_size()
+        self.lib_size = self._compute_batch_library_size()
+        artificial_batches = {
+            x: self._sample_batches(n_artificial_samples=n_artificial_samples, data=x)
+            for x in ['source', 'target']
+        }
+        artificial_samples = {
+            x: parallel_generate_samples(
+                sample_size=n_artificial_samples,
+                batch_names=artificial_batches[x],
+                lib_size=self.lib_size[x],
+                model=self.scvi_models[x],
+                return_dist=False,
+                batch_size=min(10**4, n_artificial_samples),
+                n_jobs=self.n_jobs
+            )
+            for x in ['source', 'target']
+        }
+
+        for x in ['source', 'target']:
+            non_zero_samples = torch.where(torch.sum(artificial_samples[x], axis=1) > 0)
+            artificial_samples[x] = artificial_samples[x][non_zero_samples]
+            artificial_batches[x] = artificial_batches[x][non_zero_samples]
+
+        return artificial_samples, artificial_batches
+
+    def _generate_artificial_samples_batch(
+            self,
+            n_artificial_samples: int,
+            data_source: str
+    ):
         artificial_batches = {
             x: self._sample_batches(n_artificial_samples=n_artificial_samples, data=x)
             for x in ['source', 'target']
@@ -187,12 +225,20 @@ class SobolevAlignment:
                 lib_size=lib_size[x],
                 model=self.scvi_models[x],
                 return_dist=False,
-                batch_size=min(10**4, n_artificial_samples),
+                batch_size=min(10 ** 4, n_artificial_samples),
                 n_jobs=self.n_jobs
             )
             for x in ['source', 'target']
         }
+
+        for x in ['source', 'target']:
+            non_zero_samples = torch.where(torch.sum(artificial_samples[x], axis=1) > 0)
+            artificial_samples[x] = artificial_samples[x][non_zero_samples]
+            artificial_batches[x] = artificial_batches[x][non_zero_samples]
+
         return artificial_samples, artificial_batches
+
+
 
     def _compute_batch_library_size(self):
         if self.batch_name['source'] is None or self.batch_name['target'] is None:
@@ -380,3 +426,107 @@ class SobolevAlignment:
             dpi=300
         )
         plt.show()
+
+    def compute_error(self):
+        """
+        Compute error of the KRR approximation on the input (data used for VAE training) and used for KRR.
+        :return:
+        """
+        return {
+            'source': self._compute_error_one_type('source'),
+            'target': self._compute_error_one_type('target')
+        }
+
+    def _compute_error_one_type(self, data_type):
+        # KRR error of input data
+        latent = self.scvi_models[data_type].get_latent_representation()
+        input_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.training_data[data_type].X)) - latent
+        input_mean_square = torch.square(input_krr_diff)
+        input_factor_mean_square = torch.mean(input_mean_square, axis=0)
+        input_latent_mean_square = torch.mean(input_mean_square)
+        input_factor_reconstruction_error = np.linalg.norm(input_krr_diff, axis=0) / np.linalg.norm(latent, axis=0)
+        input_latent_reconstruction_error = np.linalg.norm(input_krr_diff) / np.linalg.norm(latent)
+
+        # KRR error of artificial data
+        training_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.artificial_samples_[data_type]))
+        training_krr_diff = training_krr_diff - self.artificial_embeddings_[data_type]
+        krr_training_mean_square = torch.square(training_krr_diff)
+        krr_training_factor_mean_square = torch.mean(krr_training_mean_square, axis=0)
+        krr_training_latent_mean_square = torch.mean(krr_training_mean_square)
+        training_krr_factor_reconstruction_error = np.linalg.norm(training_krr_diff, axis=0) / np.linalg.norm(self.artificial_embeddings_[data_type], axis=0)
+        training_krr_latent_reconstruction_error = np.linalg.norm(training_krr_diff) / np.linalg.norm(self.artificial_embeddings_[data_type])
+
+        return {
+            'factor':{
+                'MSE': {
+                    'input': input_factor_mean_square.detach().numpy(),
+                    'artificial': krr_training_factor_mean_square.detach().numpy()
+                },
+                'reconstruction_error': {
+                    'input': input_factor_reconstruction_error,
+                    'artificial': training_krr_factor_reconstruction_error
+                },
+            },
+            'latent':{
+                'MSE': {
+                    'input': input_latent_mean_square.detach().numpy(),
+                    'artificial': krr_training_latent_mean_square.detach().numpy()
+                },
+                'reconstruction_error': {
+                    'input': input_latent_reconstruction_error,
+                    'artificial': training_krr_latent_reconstruction_error
+                },
+            }
+        }
+
+    def feature_analysis(self,
+                         max_order: int=1,
+                         gene_names:list=None):
+
+        # Make parameters
+        if 'gamma' in self.krr_params['source']['kernel_params'] and 'gamma' in self.krr_params['target']['kernel_params']:
+            gamma_s = self.krr_params['source']['kernel_params']['gamma']
+            gamma_t = self.krr_params['target']['kernel_params']['gamma']
+        elif 'sigma' in self.krr_params['source']['kernel_params'] and 'sigma' in self.krr_params['target']['kernel_params']:
+            gamma_s = 1 / (2 * self.krr_params['source']['kernel_params']['sigma'] ** 2)
+            gamma_t = 1 / (2 * self.krr_params['target']['kernel_params']['sigma'] ** 2)
+        assert gamma_s == gamma_t
+        self.gamma = gamma_s
+
+        self.sample_offset = {
+            x:_compute_offset(self.approximate_krr_regressions_[x].anchors(), self.gamma)
+            for x in self.training_data
+        }
+
+        if gene_names is None:
+            self.gene_names = self.training_data['source'].columns
+        else:
+            self.gene_names = gene_names
+
+        self.basis_feature_weights_df = {
+            x: higher_order_contribution(
+                d=max_order,
+                data=self.approximate_krr_regressions_[x].anchors().detach().numpy(),
+                sample_offset=self.sample_offset[x],
+                gene_names=self.gene_names,
+                gamma=self.gamma,
+                n_jobs=self.n_jobs
+            )
+            for x in self.training_data
+        }
+
+        self.factor_level_feature_weights_df = {
+            x: pd.DataFrame(
+                self.approximate_krr_regressions_[x].sample_weights_.T.detach().numpy(),
+                index=np.arange(self.approximate_krr_regressions_[x].sample_weights_.T.shape[0]),
+                columns=self.basis_feature_weights_df[x].index
+            )
+            for x in self.training_data
+        }
+
+        self.factor_level_feature_weights_df = {
+            x: self.factor_level_feature_weights_df[x].dot(self.basis_feature_weights_df[x])
+            for x in self.training_data
+        }
+
+

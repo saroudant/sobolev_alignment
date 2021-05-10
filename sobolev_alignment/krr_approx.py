@@ -201,10 +201,13 @@ class KRRApprox:
         self._ny_product = np.sum(np.log(self.ridge_clf_.ny_points_.detach().numpy() + mask), axis=1)
         self.ridge_samples_idx_ = [np.where(self._train_product == x)[0] for x in self._ny_product]
         for x in self.ridge_samples_idx_:
-            if x.shape[0] > 1:
+            if x.shape[0] == 0:
                 assert False
         self.ridge_samples_idx_ = [x[0] for x in self.ridge_samples_idx_]
         assert len(self.ridge_samples_idx_) == self.M
+
+    def anchors(self):
+        return self.training_data_[self.ridge_samples_idx_]
 
     def transform(
             self,
