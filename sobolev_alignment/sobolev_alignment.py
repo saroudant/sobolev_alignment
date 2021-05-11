@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from pickle import load, dump
+import gc
 import scipy
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
@@ -95,7 +96,8 @@ class SobolevAlignment:
             n_artificial_samples: int = int(10e5),
             fit_vae: bool = True,
             sample_artificial: bool=True,
-            krr_approx: bool=True
+            krr_approx: bool=True,
+            n_samples_per_sample_batch: int=10**6
     ):
         """
         Parameters
@@ -121,9 +123,12 @@ class SobolevAlignment:
 
         # Approximation by kernel machines
         if sample_artificial:
-            self.artificial_samples_, self.artificial_batches_ = self._generate_artificial_samples(n_artificial_samples)
+            self.artificial_samples_, self.artificial_batches_ = self._generate_artificial_samples(
+                n_artificial_samples=n_artificial_samples,
+                large_batch_size=n_samples_per_sample_batch
+            )
             self.artificial_embeddings_ = {
-                x: self._embed_artificial_samples(x)
+                x: self._embed_artificial_samples(x, large_batch_size=n_samples_per_sample_batch)
                 for x in ['source', 'target']
             }
             for x in self.krr_params:
@@ -167,7 +172,8 @@ class SobolevAlignment:
 
     def _generate_artificial_samples(
             self,
-            n_artificial_samples: int
+            n_artificial_samples: int,
+            large_batch_size=10**5,
     ):
         """
         Sample from the normal distribution associated to the latent space (for either source or target VAE model),
@@ -185,27 +191,23 @@ class SobolevAlignment:
         """
 
         self.lib_size = self._compute_batch_library_size()
-        artificial_batches = {
-            x: self._sample_batches(n_artificial_samples=n_artificial_samples, data=x)
-            for x in ['source', 'target']
-        }
-        artificial_samples = {
-            x: parallel_generate_samples(
-                sample_size=n_artificial_samples,
-                batch_names=artificial_batches[x],
-                lib_size=self.lib_size[x],
-                model=self.scvi_models[x],
-                return_dist=False,
-                batch_size=min(10**4, n_artificial_samples),
-                n_jobs=self.n_jobs
-            )
-            for x in ['source', 'target']
-        }
+        artificial_samples = {}
+        artificial_batches = {}
 
-        for x in ['source', 'target']:
-            non_zero_samples = torch.where(torch.sum(artificial_samples[x], axis=1) > 0)
-            artificial_samples[x] = artificial_samples[x][non_zero_samples]
-            artificial_batches[x] = artificial_batches[x][non_zero_samples]
+        for data_source in ['source', 'target']:
+            batch_sizes = [large_batch_size] * (n_artificial_samples // large_batch_size) + [n_artificial_samples % large_batch_size]
+            batch_sizes = [x for x in batch_sizes if x > 0]
+            _generated_data = [
+                self._generate_artificial_samples_batch(
+                    batch,
+                    data_source
+                )
+                for batch in batch_sizes
+            ]
+            _generated_data = list(zip(*_generated_data))
+            artificial_samples[data_source] = np.concatenate(_generated_data[0])
+            artificial_batches[data_source] = np.concatenate(_generated_data[1])
+            gc.collect()
 
         return artificial_samples, artificial_batches
 
@@ -214,27 +216,20 @@ class SobolevAlignment:
             n_artificial_samples: int,
             data_source: str
     ):
-        artificial_batches = {
-            x: self._sample_batches(n_artificial_samples=n_artificial_samples, data=x)
-            for x in ['source', 'target']
-        }
-        artificial_samples = {
-            x: parallel_generate_samples(
+        artificial_batches = self._sample_batches(n_artificial_samples=n_artificial_samples, data=data_source)
+        artificial_samples = parallel_generate_samples(
                 sample_size=n_artificial_samples,
-                batch_names=artificial_batches[x],
-                lib_size=lib_size[x],
-                model=self.scvi_models[x],
+                batch_names=artificial_batches,
+                lib_size=self.lib_size[data_source],
+                model=self.scvi_models[data_source],
                 return_dist=False,
                 batch_size=min(10 ** 4, n_artificial_samples),
                 n_jobs=self.n_jobs
-            )
-            for x in ['source', 'target']
-        }
-
-        for x in ['source', 'target']:
-            non_zero_samples = torch.where(torch.sum(artificial_samples[x], axis=1) > 0)
-            artificial_samples[x] = artificial_samples[x][non_zero_samples]
-            artificial_batches[x] = artificial_batches[x][non_zero_samples]
+        )
+        non_zero_samples = torch.where(torch.sum(artificial_samples, axis=1) > 0)
+        artificial_samples = artificial_samples[non_zero_samples]
+        artificial_batches = artificial_batches[non_zero_samples]
+        gc.collect()
 
         return artificial_samples, artificial_batches
 
@@ -273,19 +268,34 @@ class SobolevAlignment:
             size=int(n_artificial_samples)
         )
 
-    def _embed_artificial_samples(self, data: str):
-        # Format artificial samples to be fed into scVI.
-        x_train = self.artificial_samples_[data]
-        train_obs = pd.DataFrame(
-            np.array(self.artificial_batches_[data]),
-            columns=[self.batch_name[data]]
-        )
-        x_train_an = AnnData(x_train.cpu().detach().numpy(),
-                             obs=train_obs)
-        x_train_an.layers['counts'] = x_train_an.X.copy()
+    def _embed_artificial_samples(
+            self,
+            data: str,
+            large_batch_size=10**5
+    ):
+        # Divide in batches
+        n_artificial_samples = self.artificial_samples_[data].shape[0]
+        batch_sizes = [large_batch_size] * (n_artificial_samples // large_batch_size) + [n_artificial_samples % large_batch_size]
+        batch_sizes = [0] + list(np.cumsum([x for x in batch_sizes if x > 0]))
+        batch_start = batch_sizes[:-1]
+        batch_end = batch_sizes[1:]
 
+        # Format artificial samples to be fed into scVI.
+        embedding = []
+        for start, end in zip(batch_start, batch_end):
+            x_train = self.artificial_samples_[data][start:end]
+            train_obs = pd.DataFrame(
+                np.array(self.artificial_batches_[data][start:end]),
+                columns=[self.batch_name[data]]
+            )
+            x_train_an = AnnData(x_train,
+                                 obs=train_obs)
+            x_train_an.layers['counts'] = x_train_an.X.copy()
+            embedding.append(self.scvi_models[data].get_latent_representation(x_train_an))
+
+        gc.collect()
         # Forward these formatted samples
-        return torch.Tensor(self.scvi_models[data].get_latent_representation(x_train_an))
+        return np.concatenate(embedding)
 
     def _approximate_encoders(self):
         """
@@ -325,16 +335,16 @@ class SobolevAlignment:
         """
         krr_clf = self.approximate_krr_regressions_[data]
         K = krr_clf.kernel_(
-            krr_clf.training_data_[krr_clf.ridge_samples_idx_],
-            krr_clf.training_data_[krr_clf.ridge_samples_idx_]
+            krr_clf.anchors(),
+            krr_clf.anchors()
         )
         K = torch.Tensor(K)
         return krr_clf.sample_weights_.T.matmul(K).matmul(krr_clf.sample_weights_)
 
     def _compute_cross_cosine_sim(self):
         K_XY = self.approximate_krr_regressions_['target'].kernel_(
-            self.approximate_krr_regressions_['source'].training_data_[self.approximate_krr_regressions_['source'].ridge_samples_idx_],
-            self.approximate_krr_regressions_['target'].training_data_[self.approximate_krr_regressions_['target'].ridge_samples_idx_]
+            self.approximate_krr_regressions_['source'].anchors(),
+            self.approximate_krr_regressions_['target'].anchors()
         )
         K_XY = torch.Tensor(K_XY)
         return self.approximate_krr_regressions_['source'].sample_weights_.T.matmul(K_XY).matmul(self.approximate_krr_regressions_['target'].sample_weights_)

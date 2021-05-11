@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="57b26846-65b7-404b-a7df-c0198e8b0d46" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/sobolev_alignment/feature_analysis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" afterDir="false" />
@@ -16,25 +15,29 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="feature_analysis.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/sobolev_alignment/feature_analysis.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="421">
-              <caret line="68" column="39" selection-start-line="68" selection-start-column="39" selection-end-line="68" selection-end-column="39" />
-              <folding>
-                <element signature="e#146#164#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="186">
-              <caret line="192" column="41" lean-forward="true" selection-start-line="192" selection-start-column="41" selection-end-line="192" selection-end-column="41" />
+            <state relative-caret-position="543">
+              <caret line="338" column="29" selection-start-line="338" selection-start-column="29" selection-end-line="338" selection-end-column="29" />
               <folding>
                 <element signature="e#145#159#0" expanded="true" />
+                <element signature="e#4562#5285#0" />
+                <element signature="e#4730#5264#0" />
+                <element signature="e#5433#6816#0" />
+                <element signature="e#6963#7758#0" />
+                <element signature="e#7813#8466#0" />
+                <element signature="e#8535#8828#0" />
+                <element signature="e#8956#10047#0" />
+                <element signature="e#10094#10527#0" />
+                <element signature="e#10583#10928#0" />
+                <element signature="e#12116#12353#0" />
+                <element signature="e#12432#13941#0" />
+                <element signature="e#14006#14755#0" />
+                <element signature="e#14889#15443#0" />
+                <element signature="e#15482#15771#0" />
+                <element signature="e#15831#18171#0" />
+                <element signature="e#18304#20302#0" />
               </folding>
             </state>
           </provider>
@@ -43,8 +46,23 @@
       <file leaf-file-name="krr_approx.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="470">
-              <caret line="190" column="28" selection-start-line="190" selection-start-column="13" selection-end-line="190" selection-end-column="28" />
+            <state relative-caret-position="807">
+              <caret line="213" column="34" selection-start-line="213" selection-start-column="34" selection-end-line="213" selection-end-column="34" />
+              <folding>
+                <element signature="e#463#477#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="feature_analysis.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sobolev_alignment/feature_analysis.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="421">
+              <caret line="68" column="39" selection-start-line="68" selection-start-column="39" selection-end-line="68" selection-end-column="39" />
+              <folding>
+                <element signature="e#146#164#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -68,7 +86,6 @@
       <find>krr_</find>
       <find>elf</find>
       <find>use</find>
-      <find>training_data_</find>
       <find>FalkonOptions</find>
       <find>_setup_falkon_clf</find>
       <find>_setup_clf</find>
@@ -79,10 +96,13 @@
       <find>assert</find>
       <find>AnnData</find>
       <find>artificial_batches_</find>
-      <find>_generate_artificial_samples</find>
       <find>_sample_batches</find>
       <find>error</find>
       <find>n_jobs</find>
+      <find>detach(</find>
+      <find>_generate_artificial_samples</find>
+      <find>self._generate_artificial_samples</find>
+      <find>training_data_</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -96,8 +116,8 @@
         <option value="$PROJECT_DIR$/test/test_sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/feature_analysis.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
       </list>
     </option>
@@ -243,7 +263,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="10" />
+      <option name="time" value="11" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -295,13 +315,6 @@
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/__init__.py" />
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
-    <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="470">
-          <caret line="190" column="28" selection-start-line="190" selection-start-column="13" selection-end-line="190" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/feature_analysis.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="421">
@@ -312,12 +325,38 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="807">
+          <caret line="213" column="34" selection-start-line="213" selection-start-column="34" selection-end-line="213" selection-end-column="34" />
+          <folding>
+            <element signature="e#463#477#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="186">
-          <caret line="192" column="41" lean-forward="true" selection-start-line="192" selection-start-column="41" selection-end-line="192" selection-end-column="41" />
+        <state relative-caret-position="543">
+          <caret line="338" column="29" selection-start-line="338" selection-start-column="29" selection-end-line="338" selection-end-column="29" />
           <folding>
             <element signature="e#145#159#0" expanded="true" />
+            <element signature="e#4562#5285#0" />
+            <element signature="e#4730#5264#0" />
+            <element signature="e#5433#6816#0" />
+            <element signature="e#6963#7758#0" />
+            <element signature="e#7813#8466#0" />
+            <element signature="e#8535#8828#0" />
+            <element signature="e#8956#10047#0" />
+            <element signature="e#10094#10527#0" />
+            <element signature="e#10583#10928#0" />
+            <element signature="e#12116#12353#0" />
+            <element signature="e#12432#13941#0" />
+            <element signature="e#14006#14755#0" />
+            <element signature="e#14889#15443#0" />
+            <element signature="e#15482#15771#0" />
+            <element signature="e#15831#18171#0" />
+            <element signature="e#18304#20302#0" />
           </folding>
         </state>
       </provider>

@@ -23,6 +23,7 @@ import os, sys
 import numpy as np
 from pickle import load, dump
 import torch
+import gc
 
 # Falkon import
 from falkon import Falkon, kernels
@@ -159,6 +160,9 @@ class KRRApprox:
 
         self._save_coefs()
 
+        self.training_data_ = self.training_data_[self.ridge_samples_idx_]
+        gc.collect()
+
         return self
 
     def _setup_clf(self):
@@ -207,7 +211,7 @@ class KRRApprox:
         assert len(self.ridge_samples_idx_) == self.M
 
     def anchors(self):
-        return self.training_data_[self.ridge_samples_idx_]
+        return self.training_data_
 
     def transform(
             self,
