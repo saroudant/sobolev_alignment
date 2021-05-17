@@ -35,7 +35,6 @@ def valid_embedding(valid_input, embedding_proj):
     return valid_input.matmul(embedding_proj)
 
 class TestKRRApprox():
-
     ###
     # SKLEARN CLFS
     ###
@@ -248,7 +247,7 @@ class TestKRRApprox():
             input,
             valid_input):
 
-        pred_reconstruct = fit_falkon_laplacian_ridge.kernel_(valid_input, input[fit_falkon_laplacian_ridge.ridge_samples_idx_,:])
+        pred_reconstruct = fit_falkon_laplacian_ridge.kernel_(valid_input, fit_falkon_laplacian_ridge.anchors())
         pred_reconstruct = pred_reconstruct.matmul(fit_falkon_laplacian_ridge.sample_weights_)
         np.testing.assert_array_almost_equal(pred_reconstruct,
                                              fit_falkon_laplacian_ridge.transform(valid_input),

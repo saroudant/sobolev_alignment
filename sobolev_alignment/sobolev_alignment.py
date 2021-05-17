@@ -97,7 +97,9 @@ class SobolevAlignment:
             fit_vae: bool = True,
             sample_artificial: bool=True,
             krr_approx: bool=True,
-            n_samples_per_sample_batch: int=10**6
+            n_samples_per_sample_batch: int=10**6,
+            save_mmap: str=None,
+            log_input: bool=False
     ):
         """
         Parameters
@@ -123,18 +125,19 @@ class SobolevAlignment:
 
         # Approximation by kernel machines
         if sample_artificial:
-            self.artificial_samples_, self.artificial_batches_ = self._generate_artificial_samples(
+            self._generate_artificial_samples(
                 n_artificial_samples=n_artificial_samples,
-                large_batch_size=n_samples_per_sample_batch
+                large_batch_size=n_samples_per_sample_batch,
+                save_mmap=save_mmap
             )
             self.artificial_embeddings_ = {
                 x: self._embed_artificial_samples(x, large_batch_size=n_samples_per_sample_batch)
                 for x in ['source', 'target']
             }
-            for x in self.krr_params:
-                if self.krr_params[x]['method'] == 'falkon':
-                    self.artificial_samples_[x] = torch.Tensor(self.artificial_samples_[x]).cpu()
-                    self.artificial_embeddings_[x] = torch.Tensor(self.artificial_embeddings_[x]).cpu()
+            self._memmap_log_processing(
+                save_mmap=save_mmap,
+                log_input=log_input
+            )
 
         if krr_approx:
             self._approximate_encoders()
@@ -173,7 +176,8 @@ class SobolevAlignment:
     def _generate_artificial_samples(
             self,
             n_artificial_samples: int,
-            large_batch_size=10**5,
+            large_batch_size: int=10**5,
+            save_mmap: str=None
     ):
         """
         Sample from the normal distribution associated to the latent space (for either source or target VAE model),
@@ -191,8 +195,8 @@ class SobolevAlignment:
         """
 
         self.lib_size = self._compute_batch_library_size()
-        artificial_samples = {}
-        artificial_batches = {}
+        self.artificial_samples_ = {}
+        self.artificial_batches_ = {}
 
         for data_source in ['source', 'target']:
             batch_sizes = [large_batch_size] * (n_artificial_samples // large_batch_size) + [n_artificial_samples % large_batch_size]
@@ -205,11 +209,23 @@ class SobolevAlignment:
                 for batch in batch_sizes
             ]
             _generated_data = list(zip(*_generated_data))
-            artificial_samples[data_source] = np.concatenate(_generated_data[0])
-            artificial_batches[data_source] = np.concatenate(_generated_data[1])
+            self.artificial_samples_[data_source] = np.concatenate(_generated_data[0])
+            self.artificial_batches_[data_source] = np.concatenate(_generated_data[1])
+            del _generated_data
             gc.collect()
 
-        return artificial_samples, artificial_batches
+            if save_mmap is not None and type(save_mmap) == str:
+                np.save(
+                    open('%s/%s_artificial_input.npy'%(save_mmap, data_source), 'wb'),
+                    self.artificial_samples_[data_source]
+                )
+                self.artificial_samples_[data_source] = np.load(
+                    '%s/%s_artificial_input.npy'%(save_mmap, data_source),
+                    mmap_mode='r'
+                )
+                gc.collect()
+
+        return True
 
     def _generate_artificial_samples_batch(
             self,
@@ -232,8 +248,6 @@ class SobolevAlignment:
         gc.collect()
 
         return artificial_samples, artificial_batches
-
-
 
     def _compute_batch_library_size(self):
         if self.batch_name['source'] is None or self.batch_name['target'] is None:
@@ -293,9 +307,60 @@ class SobolevAlignment:
             x_train_an.layers['counts'] = x_train_an.X.copy()
             embedding.append(self.scvi_models[data].get_latent_representation(x_train_an))
 
+        del self.artificial_batches_[data]
         gc.collect()
         # Forward these formatted samples
         return np.concatenate(embedding)
+
+    def _memmap_log_processing(
+            self,
+            save_mmap: str=None,
+            log_input: bool=False
+    ):
+        # If no save_mmap, then no log
+        if save_mmap is not None and type(save_mmap) == str:
+            self._save_mmap = save_mmap
+            self._memmap_embedding(save_mmap)
+
+        self.krr_log_input_ = log_input
+        if log_input:
+            if save_mmap is not None and type(save_mmap) == str:
+                for data_source in self.artificial_samples_:
+                    self.artificial_samples_[data_source] = np.log10(self.artificial_samples_[data_source] + 1)
+
+                    #Re-save
+                    np.save(
+                        open('%s/%s_artificial_input.npy' % (save_mmap, data_source), 'wb'),
+                        self.artificial_samples_[data_source]
+                    )
+                    self.artificial_samples_[data_source] = np.load(
+                        '%s/%s_artificial_input.npy' % (save_mmap, data_source),
+                        mmap_mode='r'
+                    )
+                    gc.collect()
+
+            else:
+                self.artificial_samples_ = {
+                    np.log10(self.artificial_samples_[x] + 1)
+                    for x in self.artificial_samples_
+                }
+
+
+    def _memmap_embedding(self, save_mmap):
+        for data_source in ['source', 'target']:
+            np.save(
+                open('%s/%s_artificial_embedding.npy' % (save_mmap, data_source), 'wb'),
+                self.artificial_embeddings_[data_source]
+            )
+            self.artificial_embeddings_[data_source] = np.load(
+                '%s/%s_artificial_embedding.npy' % (save_mmap, data_source),
+                mmap_mode='r'
+            )
+            gc.collect()
+        return True
+
+
+
 
     def _approximate_encoders(self):
         """
@@ -308,8 +373,8 @@ class SobolevAlignment:
 
         for x in ['source', 'target']:
             self.approximate_krr_regressions_[x].fit(
-                self.artificial_samples_[x],
-                self.artificial_embeddings_[x]
+                torch.from_numpy(self.artificial_samples_[x]),
+                torch.from_numpy(self.artificial_embeddings_[x])
             )
 
         return True
@@ -450,19 +515,22 @@ class SobolevAlignment:
     def _compute_error_one_type(self, data_type):
         # KRR error of input data
         latent = self.scvi_models[data_type].get_latent_representation()
-        input_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.training_data[data_type].X)) - latent
+        if self.krr_log_input_:
+            input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(np.log10(self.training_data[data_type].X+1)))
+        else:
+            input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.training_data[data_type].X))
+        input_krr_diff = input_krr_pred - latent
         input_mean_square = torch.square(input_krr_diff)
         input_factor_mean_square = torch.mean(input_mean_square, axis=0)
         input_latent_mean_square = torch.mean(input_mean_square)
         input_factor_reconstruction_error = np.linalg.norm(input_krr_diff, axis=0) / np.linalg.norm(latent, axis=0)
         input_latent_reconstruction_error = np.linalg.norm(input_krr_diff) / np.linalg.norm(latent)
+        del input_krr_pred, input_mean_square, input_krr_diff
+        gc.collect()
 
         # KRR error of artificial data
         training_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.artificial_samples_[data_type]))
         training_krr_diff = training_krr_diff - self.artificial_embeddings_[data_type]
-        krr_training_mean_square = torch.square(training_krr_diff)
-        krr_training_factor_mean_square = torch.mean(krr_training_mean_square, axis=0)
-        krr_training_latent_mean_square = torch.mean(krr_training_mean_square)
         training_krr_factor_reconstruction_error = np.linalg.norm(training_krr_diff, axis=0) / np.linalg.norm(self.artificial_embeddings_[data_type], axis=0)
         training_krr_latent_reconstruction_error = np.linalg.norm(training_krr_diff) / np.linalg.norm(self.artificial_embeddings_[data_type])
 
@@ -470,7 +538,7 @@ class SobolevAlignment:
             'factor':{
                 'MSE': {
                     'input': input_factor_mean_square.detach().numpy(),
-                    'artificial': krr_training_factor_mean_square.detach().numpy()
+                    'artificial': torch.mean(torch.square(training_krr_diff), axis=0).detach().numpy()
                 },
                 'reconstruction_error': {
                     'input': input_factor_reconstruction_error,
@@ -480,7 +548,7 @@ class SobolevAlignment:
             'latent':{
                 'MSE': {
                     'input': input_latent_mean_square.detach().numpy(),
-                    'artificial': krr_training_latent_mean_square.detach().numpy()
+                    'artificial': torch.mean(torch.square(training_krr_diff)).detach().numpy()
                 },
                 'reconstruction_error': {
                     'input': input_latent_reconstruction_error,
