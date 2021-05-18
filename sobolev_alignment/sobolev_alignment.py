@@ -373,8 +373,8 @@ class SobolevAlignment:
 
         for x in ['source', 'target']:
             self.approximate_krr_regressions_[x].fit(
-                torch.from_numpy(self.artificial_samples_[x]),
-                torch.from_numpy(self.artificial_embeddings_[x])
+                torch.from_numpy(self.artificial_samples_[x]).contiguous(),
+                torch.from_numpy(self.artificial_embeddings_[x]).contiguous()
             )
 
         return True
