@@ -14,23 +14,34 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="feature_analysis.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sobolev_alignment/feature_analysis.py">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file leaf-file-name="generate_artificial_sample.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file leaf-file-name="kernel_operations.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sobolev_alignment/kernel_operations.py">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
       <file leaf-file-name="krr_approx.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="444">
-              <caret line="193" column="46" lean-forward="true" selection-start-line="193" selection-start-column="46" selection-end-line="193" selection-end-column="46" />
-              <folding>
-                <element signature="e#463#477#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
+          <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="339">
-              <caret line="376" column="77" selection-start-line="376" selection-start-column="77" selection-end-line="376" selection-end-column="77" />
+            <state relative-caret-position="324">
+              <caret line="376" column="64" selection-start-line="376" selection-start-column="64" selection-end-line="376" selection-end-column="64" />
+              <folding>
+                <element signature="e#145#159#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -46,11 +57,15 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
+      <find>M =</find>
+      <find>kernel</find>
+      <find>artificial_samples_</find>
       <find>n_job</find>
       <find>self.n_jobs</find>
       <find>krr_</find>
       <find>elf</find>
       <find>use</find>
+      <find>training_data_</find>
       <find>FalkonOptions</find>
       <find>_setup_falkon_clf</find>
       <find>_setup_clf</find>
@@ -60,22 +75,9 @@
       <find>approx</find>
       <find>assert</find>
       <find>AnnData</find>
-      <find>_sample_batches</find>
-      <find>error</find>
-      <find>n_jobs</find>
-      <find>detach(</find>
-      <find>_generate_artificial_samples</find>
-      <find>self._generate_artificial_samples</find>
-      <find>training_data_</find>
-      <find>training_data</find>
-      <find>generate</find>
       <find>artificial_batches_</find>
-      <find>_memmap_log_processing</find>
-      <find>krr_training_factor_mean_square</find>
-      <find>krr_training_mean_square</find>
-      <find>k</find>
-      <find>penalization</find>
-      <find>fit</find>
+      <find>_generate_artificial_samples</find>
+      <find>_sample_batches</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -84,21 +86,19 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
+        <option value="$PROJECT_DIR$/test/test_krr_approx.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/__init__.py" />
         <option value="$PROJECT_DIR$/test/test_sobolev_alignment.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/feature_analysis.py" />
-        <option value="$PROJECT_DIR$/test/test_krr_approx.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
+        <option value="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" fullScreen="true">
-    <option name="x" value="1440" />
-    <option name="width" value="1920" />
-    <option name="height" value="1200" />
+    <option name="width" value="1440" />
+    <option name="height" value="900" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -139,52 +139,6 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
-    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-    </configuration>
-    <configuration default="true" type="Tox" factoryName="Tox">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-    </configuration>
-    <configuration default="true" type="tests" factoryName="Doctests">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="CLASS_NAME" value="" />
-      <option name="METHOD_NAME" value="" />
-      <option name="FOLDER_NAME" value="" />
-      <option name="TEST_TYPE" value="TEST_SCRIPT" />
-      <option name="PATTERN" value="" />
-      <option name="USE_PATTERN" value="false" />
-    </configuration>
-  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -213,12 +167,22 @@
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15347221" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Terminal" order="7" />
+      <window_info anchor="bottom" id="Python Console" order="7" />
     </layout>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -226,7 +190,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="13" />
+      <option name="time" value="8" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -273,38 +237,28 @@
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/test/test_krr_approx.py" />
     <entry file="file://$PROJECT_DIR$/test/test_sobolev_alignment.py" />
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/__init__.py" />
-    <entry file="file://$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
-    <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/feature_analysis.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="960">
-          <caret line="68" column="39" selection-start-line="68" selection-start-column="39" selection-end-line="68" selection-end-column="39" />
-        </state>
-      </provider>
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/test_krr_approx.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="36" column="22" selection-start-line="36" selection-start-column="22" selection-end-line="36" selection-end-column="22" />
-        </state>
-      </provider>
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sobolev_alignment/kernel_operations.py">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="444">
-          <caret line="193" column="46" lean-forward="true" selection-start-line="193" selection-start-column="46" selection-end-line="193" selection-end-column="46" />
-          <folding>
-            <element signature="e#463#477#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="339">
-          <caret line="376" column="77" selection-start-line="376" selection-start-column="77" selection-end-line="376" selection-end-column="77" />
+        <state relative-caret-position="324">
+          <caret line="376" column="64" selection-start-line="376" selection-start-column="64" selection-end-line="376" selection-end-column="64" />
+          <folding>
+            <element signature="e#145#159#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
