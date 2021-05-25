@@ -95,10 +95,10 @@ class SobolevAlignment:
             target_batch_name: str = None,
             n_artificial_samples: int = int(10e5),
             fit_vae: bool = True,
-            sample_artificial: bool=True,
             krr_approx: bool=True,
             n_samples_per_sample_batch: int=10**6,
-            save_mmap: str=None,
+            frac_save_artificial: float = 0.1,
+            save_mmap: str = None,
             log_input: bool=False
     ):
         """
@@ -123,30 +123,81 @@ class SobolevAlignment:
         if fit_vae:
             self._train_scvi_modules()
 
-        # Approximation by kernel machines
-        if sample_artificial:
-            self._generate_artificial_samples(
-                n_artificial_samples=n_artificial_samples,
-                large_batch_size=n_samples_per_sample_batch,
-                save_mmap=save_mmap
-            )
-            self.artificial_embeddings_ = {
-                x: self._embed_artificial_samples(x, large_batch_size=n_samples_per_sample_batch)
-                for x in ['source', 'target']
-            }
-            self._memmap_log_processing(
-                save_mmap=save_mmap,
-                log_input=log_input
-            )
-
         if krr_approx:
-            self._approximate_encoders()
+            self.lib_size = self._compute_batch_library_size()
+
+            self.approximate_krr_regressions_ = {}
+            self.artificial_samples_ = {}
+            self.artificial_samples_ = {}
+            self.artificial_embeddings_ = {}
+            for data_source in ['source', 'target']:
+                self._train_krr(
+                    data_source=data_source,
+                    n_artificial_samples=n_artificial_samples,
+                    save_mmap=save_mmap,
+                    log_input=log_input,
+                    n_samples_per_sample_batch=n_samples_per_sample_batch,
+                    frac_save_artificial=frac_save_artificial
+                )
 
             # Comparison and alignment
             self._compare_approximated_encoders()
             self._compute_principal_vectors()
 
         return self
+
+    def _train_krr(
+            self,
+            data_source:str,
+            n_artificial_samples: int,
+            save_mmap: str = None,
+            log_input: bool = True,
+            n_samples_per_sample_batch:int = 10**5,
+            frac_save_artificial: float=0.1,
+    ):
+        # Generate samples (decoder)
+        artificial_samples, artificial_batches = self._generate_artificial_samples(
+                data_source=data_source,
+                n_artificial_samples=n_artificial_samples,
+                large_batch_size=n_samples_per_sample_batch,
+                save_mmap=save_mmap
+            )
+
+        # Compute embeddings (encoder)
+        artificial_embeddings = self._embed_artificial_samples(
+            artificial_samples=artificial_samples,
+            artificial_batches=artificial_batches,
+            data_source=data_source,
+            large_batch_size=n_samples_per_sample_batch
+        )
+        del artificial_batches
+        gc.collect()
+
+        # Store in memmap
+        artificial_samples = self._memmap_log_processing(
+            data_source=data_source,
+            artificial_samples=artificial_samples,
+            artificial_embeddings=artificial_embeddings,
+            save_mmap=save_mmap,
+            log_input=log_input
+        )
+
+        # KRR approx
+        self._approximate_encoders(
+            data_source=data_source,
+            artificial_samples=artificial_samples,
+            artificial_embeddings=artificial_embeddings
+        )
+
+        # Subsample the artificial sample saved
+        n_save = int(frac_save_artificial * n_artificial_samples)
+        subsampled_idx = np.random.choice(a=np.arange(n_artificial_samples), size=n_save, replace=False)
+        self.artificial_samples_[data_source] = artificial_samples[subsampled_idx]
+        del artificial_samples
+        gc.collect()
+        self.artificial_embeddings_[data_source] = artificial_embeddings[subsampled_idx]
+        del artificial_embeddings
+        gc.collect()
 
 
     def _train_scvi_modules(self):
@@ -175,6 +226,7 @@ class SobolevAlignment:
 
     def _generate_artificial_samples(
             self,
+            data_source: str,
             n_artificial_samples: int,
             large_batch_size: int=10**5,
             save_mmap: str=None
@@ -194,38 +246,33 @@ class SobolevAlignment:
             Dictionary containing the generated data for both source and target
         """
 
-        self.lib_size = self._compute_batch_library_size()
-        self.artificial_samples_ = {}
-        self.artificial_batches_ = {}
+        batch_sizes = [large_batch_size] * (n_artificial_samples // large_batch_size) + [n_artificial_samples % large_batch_size]
+        batch_sizes = [x for x in batch_sizes if x > 0]
+        _generated_data = [
+            self._generate_artificial_samples_batch(
+                batch,
+                data_source
+            )
+            for batch in batch_sizes
+        ]
+        _generated_data = list(zip(*_generated_data))
+        artificial_samples = np.concatenate(_generated_data[0])
+        artificial_batches_ = np.concatenate(_generated_data[1])
+        del _generated_data
+        gc.collect()
 
-        for data_source in ['source', 'target']:
-            batch_sizes = [large_batch_size] * (n_artificial_samples // large_batch_size) + [n_artificial_samples % large_batch_size]
-            batch_sizes = [x for x in batch_sizes if x > 0]
-            _generated_data = [
-                self._generate_artificial_samples_batch(
-                    batch,
-                    data_source
-                )
-                for batch in batch_sizes
-            ]
-            _generated_data = list(zip(*_generated_data))
-            self.artificial_samples_[data_source] = np.concatenate(_generated_data[0])
-            self.artificial_batches_[data_source] = np.concatenate(_generated_data[1])
-            del _generated_data
+        if save_mmap is not None and type(save_mmap) == str:
+            np.save(
+                open('%s/%s_artificial_input.npy'%(save_mmap, data_source), 'wb'),
+                artificial_samples
+            )
+            artificial_samples = np.load(
+                '%s/%s_artificial_input.npy'%(save_mmap, data_source),
+                mmap_mode='r'
+            )
             gc.collect()
 
-            if save_mmap is not None and type(save_mmap) == str:
-                np.save(
-                    open('%s/%s_artificial_input.npy'%(save_mmap, data_source), 'wb'),
-                    self.artificial_samples_[data_source]
-                )
-                self.artificial_samples_[data_source] = np.load(
-                    '%s/%s_artificial_input.npy'%(save_mmap, data_source),
-                    mmap_mode='r'
-                )
-                gc.collect()
-
-        return True
+        return artificial_samples, artificial_batches_
 
     def _generate_artificial_samples_batch(
             self,
@@ -284,11 +331,13 @@ class SobolevAlignment:
 
     def _embed_artificial_samples(
             self,
-            data: str,
+            artificial_samples,
+            artificial_batches,
+            data_source: str,
             large_batch_size=10**5
     ):
         # Divide in batches
-        n_artificial_samples = self.artificial_samples_[data].shape[0]
+        n_artificial_samples = artificial_samples.shape[0]
         batch_sizes = [large_batch_size] * (n_artificial_samples // large_batch_size) + [n_artificial_samples % large_batch_size]
         batch_sizes = [0] + list(np.cumsum([x for x in batch_sizes if x > 0]))
         batch_start = batch_sizes[:-1]
@@ -297,82 +346,80 @@ class SobolevAlignment:
         # Format artificial samples to be fed into scVI.
         embedding = []
         for start, end in zip(batch_start, batch_end):
-            x_train = self.artificial_samples_[data][start:end]
+            x_train = artificial_samples[start:end]
             train_obs = pd.DataFrame(
-                np.array(self.artificial_batches_[data][start:end]),
-                columns=[self.batch_name[data]]
+                np.array(artificial_batches[start:end]),
+                columns=[self.batch_name[data_source]]
             )
             x_train_an = AnnData(x_train,
                                  obs=train_obs)
             x_train_an.layers['counts'] = x_train_an.X.copy()
-            embedding.append(self.scvi_models[data].get_latent_representation(x_train_an))
+            embedding.append(self.scvi_models[data_source].get_latent_representation(x_train_an))
 
-        del self.artificial_batches_[data]
-        gc.collect()
         # Forward these formatted samples
         return np.concatenate(embedding)
 
     def _memmap_log_processing(
             self,
+            data_source: str,
+            artificial_samples,
+            artificial_embeddings,
             save_mmap: str=None,
             log_input: bool=False
     ):
         # If no save_mmap, then no log
         if save_mmap is not None and type(save_mmap) == str:
             self._save_mmap = save_mmap
-            self._memmap_embedding(save_mmap)
+            self._memmap_embedding(data_source=data_source, artificial_embeddings=artificial_embeddings, save_mmap=save_mmap)
 
         self.krr_log_input_ = log_input
         if log_input:
             if save_mmap is not None and type(save_mmap) == str:
-                for data_source in self.artificial_samples_:
-                    self.artificial_samples_[data_source] = np.log10(self.artificial_samples_[data_source] + 1)
+                artificial_samples = np.log10(artificial_samples + 1)
 
-                    #Re-save
-                    np.save(
-                        open('%s/%s_artificial_input.npy' % (save_mmap, data_source), 'wb'),
-                        self.artificial_samples_[data_source]
-                    )
-                    self.artificial_samples_[data_source] = np.load(
-                        '%s/%s_artificial_input.npy' % (save_mmap, data_source),
-                        mmap_mode='r'
-                    )
-                    gc.collect()
+                #Re-save
+                np.save(
+                    open('%s/%s_artificial_input.npy' % (save_mmap, data_source), 'wb'),
+                    artificial_samples
+                )
+                artificial_samples = np.load(
+                    '%s/%s_artificial_input.npy' % (save_mmap, data_source),
+                    mmap_mode='r'
+                )
+                gc.collect()
 
             else:
-                self.artificial_samples_ = {
-                    np.log10(self.artificial_samples_[x] + 1)
-                    for x in self.artificial_samples_
+                artificial_samples = {
+                    np.log10(artificial_samples + 1)
+                    for x in artificial_samples
                 }
 
+        return artificial_samples
 
-    def _memmap_embedding(self, save_mmap):
-        for data_source in ['source', 'target']:
-            np.save(
-                open('%s/%s_artificial_embedding.npy' % (save_mmap, data_source), 'wb'),
-                self.artificial_embeddings_[data_source]
-            )
-            self.artificial_embeddings_[data_source] = np.load(
-                '%s/%s_artificial_embedding.npy' % (save_mmap, data_source),
-                mmap_mode='r'
-            )
-            gc.collect()
-        return True
 
-    def _approximate_encoders(self):
+    def _memmap_embedding(self, data_source, artificial_embeddings, save_mmap):
+        np.save(
+            open('%s/%s_artificial_embedding.npy' % (save_mmap, data_source), 'wb'),
+            artificial_embeddings
+        )
+        artificial_embeddings = np.load(
+            '%s/%s_artificial_embedding.npy' % (save_mmap, data_source),
+            mmap_mode='r'
+        )
+        gc.collect()
+
+        return artificial_embeddings
+
+    def _approximate_encoders(self, data_source:str, artificial_samples, artificial_embeddings):
         """
         Approximate the encoder by a KRR regression
         """
-        self.approximate_krr_regressions_ = {
-            x: KRRApprox(**self.krr_params[x])
-            for x in ['source', 'target']
-        }
+        self.approximate_krr_regressions_[data_source] = KRRApprox(**self.krr_params[data_source])
 
-        for x in ['source', 'target']:
-            self.approximate_krr_regressions_[x].fit(
-                torch.from_numpy(self.artificial_samples_[x]),
-                torch.from_numpy(self.artificial_embeddings_[x])
-            )
+        self.approximate_krr_regressions_[data_source].fit(
+            torch.from_numpy(artificial_samples),
+            torch.from_numpy(artificial_embeddings)
+        )
 
         return True
 

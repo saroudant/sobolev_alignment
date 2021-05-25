@@ -15,6 +15,7 @@ n_genes = 50
 n_batches = 3
 n_artificial_samples = 2000
 n_latent = 5
+frac_save_artificial = 0.1
 
 @pytest.fixture(scope='module')
 def source_data():
@@ -149,7 +150,8 @@ class TestSobolevAlignment():
             X_target=target_anndata,
             source_batch_name='batch',
             target_batch_name='batch',
-            n_artificial_samples=n_artificial_samples
+            n_artificial_samples=n_artificial_samples,
+            frac_save_artificial=frac_save_artificial
         )
 
 
@@ -162,11 +164,11 @@ class TestSobolevAlignment():
             assert model.history['train_loss_epoch'].values[-1,0] < model.history['train_loss_epoch'].values[0,0]
 
         for x in scvi_batch_trained.artificial_samples_:
-            assert scvi_batch_trained.artificial_samples_[x].shape[0] == n_artificial_samples
+            assert scvi_batch_trained.artificial_samples_[x].shape[0] == n_artificial_samples * frac_save_artificial
             assert scvi_batch_trained.artificial_samples_[x].shape[1] == n_genes
 
         for x in scvi_batch_trained.artificial_embeddings_:
-            assert scvi_batch_trained.artificial_embeddings_[x].shape[0] == n_artificial_samples
+            assert scvi_batch_trained.artificial_embeddings_[x].shape[0] == n_artificial_samples * frac_save_artificial
             assert scvi_batch_trained.artificial_embeddings_[x].shape[1] == n_latent
 
     def test_KRR_scvi_trained(self, scvi_batch_trained):
