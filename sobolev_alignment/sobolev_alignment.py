@@ -359,9 +359,6 @@ class SobolevAlignment:
             gc.collect()
         return True
 
-
-
-
     def _approximate_encoders(self):
         """
         Approximate the encoder by a KRR regression
@@ -604,6 +601,15 @@ class SobolevAlignment:
 
         self.factor_level_feature_weights_df = {
             x: self.factor_level_feature_weights_df[x].dot(self.basis_feature_weights_df[x])
+            for x in self.training_data
+        }
+
+        self.pv_level_feature_weights_df = {
+            x: pd.DataFrame(
+                self.untransformed_rotations_[x].T.dot(self.factor_level_feature_weights_df[x]),
+                index=['PV %s'%(i) for i in range(self.untransformed_rotations_[x].shape[1])],
+                columns=self.factor_level_feature_weights_df[x].columns
+            )
             for x in self.training_data
         }
 

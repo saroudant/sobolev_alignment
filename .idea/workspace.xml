@@ -31,16 +31,39 @@
       </file>
       <file leaf-file-name="krr_approx.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
-          <provider selected="true" editor-type-id="text-editor" />
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2535">
+              <caret line="184" column="32" selection-start-line="184" selection-start-column="25" selection-end-line="184" selection-end-column="32" />
+            </state>
+          </provider>
         </entry>
       </file>
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="324">
-              <caret line="376" column="64" selection-start-line="376" selection-start-column="64" selection-end-line="376" selection-end-column="64" />
+            <state relative-caret-position="500">
+              <caret line="141" column="22" lean-forward="true" selection-start-line="141" selection-start-column="22" selection-end-line="141" selection-end-column="22" />
               <folding>
                 <element signature="e#145#159#0" expanded="true" />
+                <element signature="e#4441#5164#0" />
+                <element signature="e#5349#7229#0" />
+                <element signature="e#7376#8171#0" />
+                <element signature="e#8224#8877#0" />
+                <element signature="e#8946#9239#0" />
+                <element signature="e#9367#10501#0" />
+                <element signature="e#10635#11790#0" />
+                <element signature="e#11845#12296#0" />
+                <element signature="e#12346#12815#0" />
+                <element signature="e#12871#13216#0" />
+                <element signature="e#13317#13703#0" />
+                <element signature="e#13754#14148#0" />
+                <element signature="e#14200#14437#0" />
+                <element signature="e#14516#16025#0" />
+                <element signature="e#16090#16839#0" />
+                <element signature="e#16973#17527#0" />
+                <element signature="e#17721#17855#0" />
+                <element signature="e#17915#20372#0" />
+                <element signature="e#20505#22914#0" />
               </folding>
             </state>
           </provider>
@@ -78,6 +101,8 @@
       <find>artificial_batches_</find>
       <find>_generate_artificial_samples</find>
       <find>_sample_batches</find>
+      <find>reg</find>
+      <find>penaliz</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -153,10 +178,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1440" y="0" width="1920" height="1080" extended-state="0" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.0859375" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15277778" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Run" order="2" />
@@ -167,22 +192,12 @@
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="bottom" id="Run" order="2" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15347221" />
-      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Version Control" order="7" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Terminal" order="7" />
-      <window_info anchor="bottom" id="Python Console" order="7" />
     </layout>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -190,7 +205,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="8" />
+      <option name="time" value="10" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -250,14 +265,37 @@
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/krr_approx.py">
-      <provider selected="true" editor-type-id="text-editor" />
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2535">
+          <caret line="184" column="32" selection-start-line="184" selection-start-column="25" selection-end-line="184" selection-end-column="32" />
+        </state>
+      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="324">
-          <caret line="376" column="64" selection-start-line="376" selection-start-column="64" selection-end-line="376" selection-end-column="64" />
+        <state relative-caret-position="500">
+          <caret line="141" column="22" lean-forward="true" selection-start-line="141" selection-start-column="22" selection-end-line="141" selection-end-column="22" />
           <folding>
             <element signature="e#145#159#0" expanded="true" />
+            <element signature="e#4441#5164#0" />
+            <element signature="e#5349#7229#0" />
+            <element signature="e#7376#8171#0" />
+            <element signature="e#8224#8877#0" />
+            <element signature="e#8946#9239#0" />
+            <element signature="e#9367#10501#0" />
+            <element signature="e#10635#11790#0" />
+            <element signature="e#11845#12296#0" />
+            <element signature="e#12346#12815#0" />
+            <element signature="e#12871#13216#0" />
+            <element signature="e#13317#13703#0" />
+            <element signature="e#13754#14148#0" />
+            <element signature="e#14200#14437#0" />
+            <element signature="e#14516#16025#0" />
+            <element signature="e#16090#16839#0" />
+            <element signature="e#16973#17527#0" />
+            <element signature="e#17721#17855#0" />
+            <element signature="e#17915#20372#0" />
+            <element signature="e#20505#22914#0" />
           </folding>
         </state>
       </provider>
