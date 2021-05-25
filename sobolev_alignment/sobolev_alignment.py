@@ -31,6 +31,7 @@ from .generate_artificial_sample import parallel_generate_samples
 from .krr_approx import KRRApprox
 from .kernel_operations import mat_inv_sqrt
 from .feature_analysis import higher_order_contribution, _compute_offset
+from .multi_krr_approx import MultiKRRApprox
 
 
 class SobolevAlignment:
@@ -100,7 +101,8 @@ class SobolevAlignment:
             n_samples_per_sample_batch: int=10**6,
             frac_save_artificial: float = 0.1,
             save_mmap: str = None,
-            log_input: bool=False
+            log_input: bool=False,
+            n_krr_clfs: int=1
     ):
         """
         Parameters
@@ -139,7 +141,8 @@ class SobolevAlignment:
                     save_mmap=save_mmap,
                     log_input=log_input,
                     n_samples_per_sample_batch=n_samples_per_sample_batch,
-                    frac_save_artificial=frac_save_artificial
+                    frac_save_artificial=frac_save_artificial,
+                    n_krr_clfs=n_krr_clfs
                 )
 
             # Comparison and alignment
@@ -157,15 +160,56 @@ class SobolevAlignment:
             log_input: bool = True,
             n_samples_per_sample_batch:int = 10**5,
             frac_save_artificial: float=0.1,
+            n_krr_clfs: int = 1
+    ):
+
+        if n_krr_clfs == 1:
+            self.approximate_krr_regressions_[data_source] = self._train_one_krr(
+                data_source=data_source,
+                n_artificial_samples=n_artificial_samples,
+                sample_artificial=sample_artificial,
+                save_mmap=save_mmap,
+                log_input=log_input,
+                n_samples_per_sample_batch=n_samples_per_sample_batch,
+                frac_save_artificial=frac_save_artificial
+            )
+            return True
+
+        elif n_krr_clfs > 1:
+            self.approximate_krr_regressions_[data_source] = MultiKRRApprox()
+            for idx in range(n_krr_clfs):
+                krr_approx = self._train_one_krr(
+                    data_source=data_source,
+                    n_artificial_samples=n_artificial_samples,
+                    sample_artificial=sample_artificial,
+                    save_mmap=save_mmap,
+                    log_input=log_input,
+                    n_samples_per_sample_batch=n_samples_per_sample_batch,
+                    frac_save_artificial=frac_save_artificial
+                )
+                self.approximate_krr_regressions_[data_source].add_clf(krr_approx)
+
+            self.approximate_krr_regressions_[data_source].process_clfs()
+            return True
+
+    def _train_one_krr(
+            self,
+            data_source: str,
+            n_artificial_samples: int,
+            sample_artificial: bool = True,
+            save_mmap: str = None,
+            log_input: bool = True,
+            n_samples_per_sample_batch: int = 10 ** 5,
+            frac_save_artificial: float = 0.1
     ):
         # Generate samples (decoder)
         if sample_artificial:
             artificial_samples, artificial_batches = self._generate_artificial_samples(
-                    data_source=data_source,
-                    n_artificial_samples=n_artificial_samples,
-                    large_batch_size=n_samples_per_sample_batch,
-                    save_mmap=save_mmap
-                )
+                data_source=data_source,
+                n_artificial_samples=n_artificial_samples,
+                large_batch_size=n_samples_per_sample_batch,
+                save_mmap=save_mmap
+            )
 
             # Compute embeddings (encoder)
             artificial_embeddings = self._embed_artificial_samples(
@@ -190,7 +234,7 @@ class SobolevAlignment:
         )
 
         # KRR approx
-        self._approximate_encoders(
+        krr_approx = self._approximate_encoders(
             data_source=data_source,
             artificial_samples=artificial_samples,
             artificial_embeddings=artificial_embeddings
@@ -206,6 +250,8 @@ class SobolevAlignment:
             self.artificial_embeddings_[data_source] = artificial_embeddings[subsampled_idx]
             del artificial_embeddings
             gc.collect()
+
+        return krr_approx
 
 
     def _train_scvi_modules(self):
@@ -422,14 +468,20 @@ class SobolevAlignment:
         """
         Approximate the encoder by a KRR regression
         """
-        self.approximate_krr_regressions_[data_source] = KRRApprox(**self.krr_params[data_source])
+        # self.approximate_krr_regressions_[data_source] = KRRApprox(**self.krr_params[data_source])
+        #
+        # self.approximate_krr_regressions_[data_source].fit(
+        #     torch.from_numpy(artificial_samples),
+        #     torch.from_numpy(artificial_embeddings)
+        # )
+        krr_approx = KRRApprox(**self.krr_params[data_source])
 
-        self.approximate_krr_regressions_[data_source].fit(
+        krr_approx.fit(
             torch.from_numpy(artificial_samples),
             torch.from_numpy(artificial_embeddings)
         )
 
-        return True
+        return krr_approx
 
     def _compare_approximated_encoders(self):
         self.M_X = self._compute_cosine_sim_intra_dataset('source')
