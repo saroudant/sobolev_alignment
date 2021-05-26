@@ -31,12 +31,13 @@ class MultiKRRApprox:
         return self.predict(X)
 
     def anchors(self):
-        return self.anchors
+        return self.anchors_
 
     def process_clfs(self):
-        self.anchors = torch.cat([clf.anchors() for clf in self.krr_regressors])
+        self.anchors_ = torch.cat([clf.anchors() for clf in self.krr_regressors])
         self.sample_weights_ = torch.cat([clf.sample_weights_ for clf in self.krr_regressors])
         self.sample_weights_ = 1 / len(self.krr_regressors) * self.sample_weights_
+        self.kernel_ = self.krr_regressors[0].kernel_
 
     def add_clf(self, clf):
         self.krr_regressors.append(clf)

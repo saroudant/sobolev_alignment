@@ -443,10 +443,7 @@ class SobolevAlignment:
                 gc.collect()
 
             else:
-                artificial_samples = {
-                    np.log10(artificial_samples + 1)
-                    for x in artificial_samples
-                }
+                artificial_samples = np.log10(artificial_samples + 1)
 
         return artificial_samples
 

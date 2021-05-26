@@ -66,7 +66,6 @@ class KRRApprox:
             kernel_params: dict = None,
             penalization: float = 10e-6,
             maxiter: int=20,
-            use_cpu: bool = None,
             falkon_options: dict = {},
     ):
         """
@@ -90,8 +89,6 @@ class KRRApprox:
         penalization
             Amount of penalization. The higher, the more penalization.
             Corresponds to alpha in sklearn.kernel_ridge.KernelRidge.
-        use_cpu
-            Whether CPU should be used. By default set to None. Only relevant for FALKON.
         """
 
 
@@ -108,7 +105,6 @@ class KRRApprox:
         self.maxiter = maxiter
 
         # Set hardware specifications
-        self.use_cpu = use_cpu
         self.falkon_options = falkon_options
 
 
@@ -185,7 +181,7 @@ class KRRApprox:
             penalty=self.penalization,
             M=self.M,
             maxiter=self.maxiter,
-            options=FalkonOptions(use_cpu=self.use_cpu, **self.falkon_options)
+            options=FalkonOptions(**self.falkon_options)
         )
         return True
 
@@ -250,8 +246,7 @@ class KRRApprox:
             'method': self.method,
             'kernel': self.kernel_,
             'M': self.M,
-            'penalization': self.penalization,
-            'use_cpu': self.use_cpu
+            'penalization': self.penalization
         }
         params.update(self.kernel_params)
         dump(params, open('%s/params.pkl'%(folder), 'wb'))
