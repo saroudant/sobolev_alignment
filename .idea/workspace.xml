@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="57b26846-65b7-404b-a7df-c0198e8b0d46" name="Default" comment="">
+    <list default="true" id="ea9a90a0-ceee-4c41-ba4d-c8526c97eff4" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,8 +16,8 @@
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="309">
-              <caret line="232" column="40" selection-start-line="232" selection-start-column="35" selection-end-line="232" selection-end-column="40" />
+            <state relative-caret-position="205">
+              <caret line="614" column="70" selection-start-line="614" selection-start-column="70" selection-end-line="614" selection-end-column="70" />
             </state>
           </provider>
         </entry>
@@ -82,21 +80,9 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/test/test_krr_approx.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/__init__.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/kernel_operations.py" />
-        <option value="$PROJECT_DIR$/test/test_sobolev_alignment.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/multi_krr_approx.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/krr_approx.py" />
-        <option value="$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py" />
         <option value="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" />
       </list>
     </option>
-  </component>
-  <component name="ProjectFrameBounds" fullScreen="true">
-    <option name="x" value="1440" />
-    <option name="width" value="1920" />
-    <option name="height" value="1080" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -121,9 +107,6 @@
         </subPane>
       </pane>
     </panes>
-  </component>
-  <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -182,9 +165,6 @@
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" />
     </layout>
-  </component>
-  <component name="VcsContentAnnotationSettings">
-    <option name="myLimit" value="2678400000" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -287,8 +267,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="309">
-          <caret line="232" column="40" selection-start-line="232" selection-start-column="35" selection-end-line="232" selection-end-column="40" />
+        <state relative-caret-position="205">
+          <caret line="614" column="70" selection-start-line="614" selection-start-column="70" selection-end-line="614" selection-end-column="70" />
         </state>
       </provider>
     </entry>

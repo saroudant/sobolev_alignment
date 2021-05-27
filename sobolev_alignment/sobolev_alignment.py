@@ -605,17 +605,17 @@ class SobolevAlignment:
         )
         plt.show()
 
-    def compute_error(self):
+    def compute_error(self, size=-1):
         """
         Compute error of the KRR approximation on the input (data used for VAE training) and used for KRR.
         :return:
         """
         return {
-            'source': self._compute_error_one_type('source'),
-            'target': self._compute_error_one_type('target')
+            'source': self._compute_error_one_type('source', size=size),
+            'target': self._compute_error_one_type('target', size=size)
         }
 
-    def _compute_error_one_type(self, data_type):
+    def _compute_error_one_type(self, data_type, size=-1):
         # KRR error of input data
         latent = self.scvi_models[data_type].get_latent_representation()
         if self.krr_log_input_:
@@ -632,10 +632,14 @@ class SobolevAlignment:
         gc.collect()
 
         # KRR error of artificial data
-        training_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.artificial_samples_[data_type]))
-        training_krr_diff = training_krr_diff - self.artificial_embeddings_[data_type]
-        training_krr_factor_reconstruction_error = np.linalg.norm(training_krr_diff, axis=0) / np.linalg.norm(self.artificial_embeddings_[data_type], axis=0)
-        training_krr_latent_reconstruction_error = np.linalg.norm(training_krr_diff) / np.linalg.norm(self.artificial_embeddings_[data_type])
+        if size > 1:
+            subsamples = np.random.choice(np.arange(self.artificial_samples_[data_type].shape[0]), size, replace=False)
+        else:
+            subsamples = np.arange(self.artificial_samples_[data_type].shape[0])
+        training_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.artificial_samples_[data_type][subsamples]))
+        training_krr_diff = training_krr_diff - self.artificial_embeddings_[data_type][subsamples]
+        training_krr_factor_reconstruction_error = np.linalg.norm(training_krr_diff, axis=0) / np.linalg.norm(self.artificial_embeddings_[data_type][subsamples], axis=0)
+        training_krr_latent_reconstruction_error = np.linalg.norm(training_krr_diff) / np.linalg.norm(self.artificial_embeddings_[data_type][subsamples])
 
         return {
             'factor':{
