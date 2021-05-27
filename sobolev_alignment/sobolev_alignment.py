@@ -199,7 +199,7 @@ class SobolevAlignment:
             sample_artificial: bool = True,
             save_mmap: str = None,
             log_input: bool = True,
-            n_samples_per_sample_batch: int = 10 ** 5,
+            n_samples_per_sample_batch: int = 10**5,
             frac_save_artificial: float = 0.1
     ):
         # Generate samples (decoder)
@@ -220,18 +220,20 @@ class SobolevAlignment:
             )
             del artificial_batches
             gc.collect()
+
+            # Store in memmap
+            print('START MEMMAPING', flush=True)
+            artificial_samples = self._memmap_log_processing(
+                data_source=data_source,
+                artificial_samples=artificial_samples,
+                artificial_embeddings=artificial_embeddings,
+                save_mmap=save_mmap,
+                log_input=log_input
+            )
+            print('END MEMMAPING', flush=True)
         else:
             artificial_samples = self.artificial_samples_[data_source]
             artificial_embeddings = self.artificial_embeddings_[data_source]
-
-        # Store in memmap
-        artificial_samples = self._memmap_log_processing(
-            data_source=data_source,
-            artificial_samples=artificial_samples,
-            artificial_embeddings=artificial_embeddings,
-            save_mmap=save_mmap,
-            log_input=log_input
-        )
 
         # KRR approx
         krr_approx = self._approximate_encoders(
@@ -353,7 +355,7 @@ class SobolevAlignment:
     def _compute_batch_library_size(self):
         if self.batch_name['source'] is None or self.batch_name['target'] is None:
             return {
-                x : float(np.mean(np.sum(self.training_data[x].X, axis=1)))
+                x :np.sum(self.training_data[x].X, axis=1).astype(float)
                 for x in self.training_data
             }
 
@@ -364,7 +366,7 @@ class SobolevAlignment:
 
         return {
             x: {
-                str(b): float(np.mean(np.sum(self.training_data[x][self.training_data[x].obs[self.batch_name[x]] == b].X, axis=1)))
+                str(b): np.sum(self.training_data[x][self.training_data[x].obs[self.batch_name[x]] == b].X, axis=1).astype(float)
                 for b in unique_batches[x]
             }
             for x in self.training_data

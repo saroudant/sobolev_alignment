@@ -40,10 +40,11 @@ def generate_samples(
             for n in batch_names
         ]
         # Recover log library size (exponential)
-        lib_size_samples = [
-            np.log(lib_size[n])
+        lib_size_samples = np.array([
+            np.random.choice(lib_size[n], 1)[0]
             for n in batch_names
-        ]
+        ])
+        lib_size_samples = np.log(lib_size_samples)
     else:
         batch_name_ids = []
         lib_size_samples = [lib_size] * int(sample_size)
@@ -56,11 +57,28 @@ def generate_samples(
         batch_index=torch.Tensor(np.array(batch_name_ids).reshape(-1, 1))
     )
 
-    samples = scvi.distributions.ZeroInflatedNegativeBinomial(
-        mu=dist_param_samples['px_rate'],
-        theta=dist_param_samples['px_r'],
-        zi_logits=dist_param_samples['px_dropout']
-    ).sample()
+    # Sample from distribution
+    if model.module.gene_likelihood == 'zinb':
+        samples = scvi.distributions.ZeroInflatedNegativeBinomial(
+            mu=dist_param_samples['px_rate'],
+            theta=dist_param_samples['px_r'],
+            zi_logits=dist_param_samples['px_dropout']
+        ).sample()
+    elif model.module.gene_likelihood == 'nb':
+        samples = scvi.distributions.NegativeBinomial(
+            mu=dist_param_samples['px_rate'],
+            theta=dist_param_samples['px_r']
+        ).sample()
+    elif model.module.gene_likelihood == "poisson":
+        samples = torch.distributions.Poisson(
+            dist_param_samples['px_rate']
+        ).sample()
+    else:
+        raise ValueError(
+            "{} reconstruction error not handled right now".format(
+                model.module.gene_likelihood
+            )
+        )
 
     if return_dist:
         return dist_param_samples, samples
