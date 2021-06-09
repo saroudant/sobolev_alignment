@@ -102,7 +102,8 @@ class SobolevAlignment:
             frac_save_artificial: float = 0.1,
             save_mmap: str = None,
             log_input: bool=False,
-            n_krr_clfs: int=1
+            n_krr_clfs: int=1,
+            no_posterior_collapse=False
     ):
         """
         Parameters
@@ -124,7 +125,7 @@ class SobolevAlignment:
 
         # Train VAE
         if fit_vae:
-            self._train_scvi_modules()
+            self._train_scvi_modules(no_posterior_collapse=no_posterior_collapse)
 
         if krr_approx:
             self.lib_size = self._compute_batch_library_size()
@@ -256,7 +257,7 @@ class SobolevAlignment:
         return krr_approx
 
 
-    def _train_scvi_modules(self):
+    def _train_scvi_modules(self, no_posterior_collapse=False):
         """
         Train the scVI models based on data given and specifications.
         """
@@ -270,15 +271,33 @@ class SobolevAlignment:
                 batch_key=self.batch_name[x]
             )
 
-            self.scvi_models[x] = scvi.model.SCVI(
-                self.training_data[x],
-                **self.scvi_params[x]['model']
-            )
-            self.scvi_models[x].train(
-                plan_kwargs=self.scvi_params[x]['plan'],
-                **self.scvi_params[x]['train'])
+            latent_variable_variance = np.zeros(1)
+            save_iter = 0
+            while np.any(latent_variable_variance<0.2):
+                print('START TRAINING %s model number %s'%(x, save_iter), flush=True)
+                try:
+                    self.scvi_models[x] = scvi.model.SCVI(
+                        self.training_data[x],
+                        **self.scvi_params[x]['model']
+                    )
+                    self.scvi_models[x].train(
+                        plan_kwargs=self.scvi_params[x]['plan'],
+                        **self.scvi_params[x]['train'])
+                except Exception as err:
+                    print('\n SCVI TRAINING ERROR: \n %s \n\n\n\n'%(err))
+                    latent_variable_variance = np.zeros(1)
+                    continue
+
+                if not no_posterior_collapse:
+                    break
+                else:
+                    embedding = self.scvi_models[x].get_latent_representation()
+                    latent_variable_variance = np.var(embedding, axis=0)
+                    save_iter += 1
 
         return True
+
+
 
     def _generate_artificial_samples(
             self,
@@ -553,13 +572,20 @@ class SobolevAlignment:
         dump(self.scvi_params, open('%s/scvi_params.pkl'%(folder), 'wb'))
 
         # Save results
-        torch.save(self.M_X, open('%s/alignment_M_X.pt'%(folder), 'wb'))
-        torch.save(self.M_Y, open('%s/alignment_M_Y.pt'%(folder), 'wb'))
-        torch.save(self.M_XY, open('%s/alignment_M_XY.pt'%(folder), 'wb'))
-        np.save(open('%s/alignment_cosine_sim.npy'%(folder), 'wb'), self.cosine_sim)
-        pd.DataFrame(self.cosine_sim).to_csv('%s/alignment_cosine_sim.csv'%(folder))
-        np.save(open('%s/alignment_principal_angles.npy'%(folder), 'wb'), self.principal_angles)
-        pd.DataFrame(self.principal_angles).to_csv('%s/alignment_principal_angles.csv'%(folder))
+        results_elements = {
+            'alignment_M_X': self.M_X,
+            'alignment_M_Y': self.M_Y,
+            'alignment_M_XY': self.M_XY,
+            'alignment_cosine_sim': self.cosine_sim,
+            'alignment_principal_angles': self.principal_angles
+        }
+        for idx, element in results_elements.items():
+            if type(element) is np.ndarray:
+                np.savetxt('%s/%s.csv'%(folder, idx), element)
+                np.save(open('%s/%s.npy'%(folder, idx), 'wb'), element)
+            elif type(element) is torch.Tensor:
+                np.savetxt('%s/%s.csv'%(folder, idx), element.detach().numpy())
+                torch.save(element, open('%s/%s.pt'%(folder, idx), 'wb'))
 
 
     def plot_training_metrics(self, folder: str='.'):

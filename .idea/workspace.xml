@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="ea9a90a0-ceee-4c41-ba4d-c8526c97eff4" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py" afterDir="false" />
     </list>
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -16,8 +15,8 @@
       <file leaf-file-name="sobolev_alignment.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="205">
-              <caret line="614" column="70" selection-start-line="614" selection-start-column="70" selection-end-line="614" selection-end-column="70" />
+            <state relative-caret-position="309">
+              <caret line="387" column="33" selection-start-line="387" selection-start-column="8" selection-end-line="387" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -25,8 +24,8 @@
       <file leaf-file-name="generate_artificial_sample.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="549">
-              <caret line="81" selection-start-line="81" selection-end-line="81" />
+            <state relative-caret-position="628">
+              <caret line="88" column="12" selection-start-line="88" selection-start-column="4" selection-end-line="88" selection-end-column="12" />
             </state>
           </provider>
         </entry>
@@ -42,8 +41,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>elf</find>
-      <find>use</find>
       <find>training_data_</find>
       <find>FalkonOptions</find>
       <find>_setup_falkon_clf</find>
@@ -72,6 +69,8 @@
       <find>self._compute_batch_library_size</find>
       <find>_compute_batch_library_size</find>
       <find>flush</find>
+      <find>Parallel</find>
+      <find>_embed_artificial_samples</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -260,15 +259,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/generate_artificial_sample.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="549">
-          <caret line="81" selection-start-line="81" selection-end-line="81" />
+        <state relative-caret-position="628">
+          <caret line="88" column="12" selection-start-line="88" selection-start-column="4" selection-end-line="88" selection-end-column="12" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sobolev_alignment/sobolev_alignment.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="205">
-          <caret line="614" column="70" selection-start-line="614" selection-start-column="70" selection-end-line="614" selection-end-column="70" />
+        <state relative-caret-position="309">
+          <caret line="387" column="33" selection-start-line="387" selection-start-column="8" selection-end-line="387" selection-end-column="33" />
         </state>
       </provider>
     </entry>

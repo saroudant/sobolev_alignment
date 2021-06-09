@@ -67,6 +67,8 @@ class KRRApprox:
             penalization: float = 10e-6,
             maxiter: int=20,
             falkon_options: dict = {},
+            mean_center: bool=False,
+            unit_std: bool=False
     ):
         """
         Create a KRRApprox instance that aims at creating one KRR model per
@@ -107,6 +109,9 @@ class KRRApprox:
         # Set hardware specifications
         self.falkon_options = falkon_options
 
+        # Preprocessing
+        self.mean_center = mean_center
+        self.unit_std = unit_std
 
     def _make_kernel(self):
         """
@@ -150,6 +155,9 @@ class KRRApprox:
         """
         self._setup_clf()
         self.training_data_ = X
+        if self.mean_center:
+            self.mean_vector_ = self.training_data_.mean(0, keepdim=True)
+            self.training_data_ -= self.mean_vector_
 
         if self.method == 'sklearn':
             self.ridge_clf_.fit(self.kernel_(self.training_data_), y)
@@ -227,6 +235,11 @@ class KRRApprox:
             Tensor containing the artificial input (x_hat).
         """
 
+        if self.mean_center:
+            X -= self.mean_vector_
+        else:
+            pass
+
         if self.method == 'sklearn':
             return self.ridge_clf_.predict(self.kernel_(X, self.training_data_))
         elif self.method == 'falkon':
@@ -246,7 +259,9 @@ class KRRApprox:
             'method': self.method,
             'kernel': self.kernel_,
             'M': self.M,
-            'penalization': self.penalization
+            'penalization': self.penalization,
+            'mean_center': self.mean_center,
+            'unit_std': self.unit_std
         }
         params.update(self.kernel_params)
         dump(params, open('%s/params.pkl'%(folder), 'wb'))
@@ -256,9 +271,11 @@ class KRRApprox:
         #   - Samples used for prediction.
         dump(self.sample_weights_, open('%s/sample_weights.pkl'%(folder), 'wb'))
         dump(
-            torch.Tensor(self.anshors()),
+            torch.Tensor(self.anchors()),
             open('%s/sample_weights.pkl'%(folder), 'wb')
         )
+        np.savetxt('%s/sample_weights.csv'%(folder), self.sample_weights_.detach().numpy())
+        np.savetxt('%s/sample_weights.csv'%(folder), self.anchors().detach().numpy())
 
 
 
