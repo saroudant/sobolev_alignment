@@ -546,19 +546,29 @@ class SobolevAlignment:
 
     def save(
             self,
-            folder: str = '.'
+            folder: str = '.',
+            with_krr: bool=True,
+            with_model: bool=True
     ):
         if not os.path.exists(folder) and not os.path.isdir(folder):
             os.mkdir(folder)
 
         # Dump scVI models
-        for x in self.scvi_models:
-            dump(
-                self.scvi_models[x],
-                open('%s/scvi_model_%s.pkl'%(folder, x), 'wb')
-            )
+        if with_model:
+            for x in self.scvi_models:
+                dump(
+                    self.scvi_models[x],
+                    open('%s/scvi_model_%s.pkl'%(folder, x), 'wb')
+                )
+                self.scvi_models[x].save(
+                    '%s/scvi_model_%s'%(folder, x),
+                    save_anndata=True
+                )
 
         # Dump the KRR:
+        if not with_krr:
+            return True
+
         for x in self.approximate_krr_regressions_:
             self.approximate_krr_regressions_[x].save('%s/krr_approx_%s'%(folder, x))
 
