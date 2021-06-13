@@ -744,19 +744,16 @@ class SobolevAlignment:
             for x in self.training_data
         }
 
-        self.factor_level_feature_weights_df = {
-            x: pd.DataFrame(
-                self.approximate_krr_regressions_[x].sample_weights_.T.detach().numpy(),
-                index=np.arange(self.approximate_krr_regressions_[x].sample_weights_.T.shape[0]),
-                columns=self.basis_feature_weights_df[x].index
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.factor_level_feature_weights_df = {}
+        for x in self.training_data:
+            index = np.arange(self.approximate_krr_regressions_[x].sample_weights_.T.shape[0])
+            columns = self.basis_feature_weights_df[x].columns
+            values = self.approximate_krr_regressions_[x].sample_weights_.T.to(device)
+            values = values.matmul(torch.Tensor(self.basis_feature_weights_df[x].values).to(device))
+            self.factor_level_feature_weights_df[x] = pd.DataFrame(
+                values.detach().numpy(), index=index, columns=columns
             )
-            for x in self.training_data
-        }
-
-        self.factor_level_feature_weights_df = {
-            x: self.factor_level_feature_weights_df[x].dot(self.basis_feature_weights_df[x])
-            for x in self.training_data
-        }
 
         self.pv_level_feature_weights_df = {
             x: pd.DataFrame(
