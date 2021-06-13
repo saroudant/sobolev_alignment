@@ -506,9 +506,13 @@ class SobolevAlignment:
         self.M_Y = self._compute_cosine_sim_intra_dataset('target')
         self.M_XY = self._compute_cross_cosine_sim()
 
-        sqrt_inv_M_X = mat_inv_sqrt(self.M_X)
-        sqrt_inv_M_Y = mat_inv_sqrt(self.M_Y)
-        self.cosine_sim = sqrt_inv_M_X.dot(self.M_XY).dot(sqrt_inv_M_Y)
+        self.sqrt_inv_M_X_ = mat_inv_sqrt(self.M_X)
+        self.sqrt_inv_M_Y_ = mat_inv_sqrt(self.M_Y)
+        self.sqrt_inv_matrices_ = {
+            'source': self.sqrt_inv_M_X_,
+            'target': self.sqrt_inv_M_Y_
+        }
+        self.cosine_sim = self.sqrt_inv_M_X_.dot(self.M_XY).dot(self.sqrt_inv_M_Y_)
 
     def _compute_cosine_sim_intra_dataset(
             self,
@@ -542,6 +546,10 @@ class SobolevAlignment:
         self.untransformed_rotations_ = {
             'source': cosine_svd[0],
             'target': cosine_svd[2].T
+        }
+        self.principal_vectors_coef_ = {
+            x: self.untransformed_rotations_[x].T.dot(self.sqrt_inv_matrices_[x]).dot(self.approximate_krr_regressions_[x].sample_weights_.T.detach().numpy())
+            for x in self.untransformed_rotations_
         }
 
     def save(
@@ -752,7 +760,7 @@ class SobolevAlignment:
 
         self.pv_level_feature_weights_df = {
             x: pd.DataFrame(
-                self.untransformed_rotations_[x].T.dot(self.factor_level_feature_weights_df[x]),
+                self.untransformed_rotations_[x].T.dot(self.sqrt_inv_matrices_[x]).dot(self.factor_level_feature_weights_df[x]),
                 index=['PV %s'%(i) for i in range(self.untransformed_rotations_[x].shape[1])],
                 columns=self.factor_level_feature_weights_df[x].columns
             )
