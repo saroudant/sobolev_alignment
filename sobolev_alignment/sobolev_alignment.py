@@ -750,7 +750,7 @@ class SobolevAlignment:
             values = self.approximate_krr_regressions_[x].sample_weights_.T.to(device)
             values = values.matmul(torch.Tensor(self.basis_feature_weights_df[x].values).to(device))
             self.factor_level_feature_weights_df[x] = pd.DataFrame(
-                values.detach().numpy(), index=index, columns=columns
+                values.cpu().detach().numpy(), index=index, columns=columns
             )
 
         self.pv_level_feature_weights_df = {
