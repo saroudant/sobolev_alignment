@@ -223,7 +223,6 @@ class SobolevAlignment:
             gc.collect()
 
             # Store in memmap
-            print('START MEMMAPING', flush=True)
             artificial_samples = self._memmap_log_processing(
                 data_source=data_source,
                 artificial_samples=artificial_samples,
@@ -231,7 +230,6 @@ class SobolevAlignment:
                 save_mmap=save_mmap,
                 log_input=log_input
             )
-            print('END MEMMAPING', flush=True)
         else:
             artificial_samples = self.artificial_samples_[data_source]
             artificial_embeddings = self.artificial_embeddings_[data_source]
@@ -493,7 +491,7 @@ class SobolevAlignment:
         #     torch.from_numpy(artificial_embeddings)
         # )
         krr_approx = KRRApprox(**self.krr_params[data_source])
-
+        
         krr_approx.fit(
             torch.from_numpy(artificial_samples),
             torch.from_numpy(artificial_embeddings)
@@ -735,7 +733,7 @@ class SobolevAlignment:
         self.basis_feature_weights_df = {
             x: higher_order_contribution(
                 d=max_order,
-                data=self.approximate_krr_regressions_[x].anchors().detach().numpy(),
+                data=self.approximate_krr_regressions_[x].anchors().cpu().detach().numpy(),
                 sample_offset=self.sample_offset[x],
                 gene_names=self.gene_names,
                 gamma=self.gamma,
