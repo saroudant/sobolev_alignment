@@ -287,9 +287,13 @@ class KRRApprox:
     def load(folder:str = '.'):
         params = load(open('%s/params.pkl'%(folder), 'rb'))
         krr_params = {e:f for e,f in params.items() if e in ['method', 'kernel', 'M', 'penalization', 'mean_center', 'unit_std']}
-        krr_approx_clf = KRRApprox(**params)
+        krr_params['kernel'] = krr_params['kernel'].kernel_name
+        krr_approx_clf = KRRApprox(**krr_params)
 
-        krr_approx_clf.self.sample_weights_()
+        krr_approx_clf.sample_weights_ = torch.load(open('%s/sample_weights.pt'%(folder), 'rb'))
+        krr_approx_clf.training_data_ = torch.load(open('%s/sample_anchors.pt'%(folder), 'rb'))
+
+        krr_approx_clf._setup_clf()
 
 
 
