@@ -272,10 +272,10 @@ class KRRApprox:
         dump(self.sample_weights_, open('%s/sample_weights.pkl'%(folder), 'wb'))
         dump(
             torch.Tensor(self.anchors()),
-            open('%s/sample_weights.pkl'%(folder), 'wb')
+            open('%s/sample_anchors.pkl'%(folder), 'wb')
         )
         np.savetxt('%s/sample_weights.csv'%(folder), self.sample_weights_.detach().numpy())
-        np.savetxt('%s/sample_weights.csv'%(folder), self.anchors().detach().numpy())
+        np.savetxt('%s/sample_anchors.csv'%(folder), self.anchors().detach().numpy())
 
 
 
