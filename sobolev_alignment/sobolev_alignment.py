@@ -603,6 +603,48 @@ class SobolevAlignment:
                 np.savetxt('%s/%s.csv'%(folder, idx), element.detach().numpy())
                 torch.save(element, open('%s/%s.pt'%(folder, idx), 'wb'))
 
+    def load(
+            self,
+            folder: str = '.',
+            with_krr: bool=True,
+            with_model: bool=True
+    ):
+        if with_model:
+            for x in ['source', 'target']:
+                self.scvi_models[x] = scvi.model.SCVI.load(
+                    '%s/scvi_model_%s'%(folder, x)
+                )
+        
+        if with_krr:
+            pass
+            # for x in ['source', 'target']:
+                # self.approximate_krr_regressions_[x] = save('%s/krr_approx_%s'%(folder, x))
+
+            # Save params
+            # pd.DataFrame(self.krr_params).to_csv('%s/krr_params.csv'%(folder))
+            # dump(self.krr_params, open('%s/krr_params.pkl'%(folder), 'wb'))
+
+            # for param_t in ['model', 'plan', 'train']:
+            #     df = pd.DataFrame([self.scvi_params[x][param_t] for x in ['source', 'target']])
+            #     df.to_csv('%s/scvi_params_%s.csv'%(folder, param_t))
+            # dump(self.scvi_params, open('%s/scvi_params.pkl'%(folder), 'wb'))
+
+            # # Save results
+            # results_elements = {
+            #     'alignment_M_X': self.M_X,
+            #     'alignment_M_Y': self.M_Y,
+            #     'alignment_M_XY': self.M_XY,
+            #     'alignment_cosine_sim': self.cosine_sim,
+            #     'alignment_principal_angles': self.principal_angles
+            # }
+            # for idx, element in results_elements.items():
+            #     if type(element) is np.ndarray:
+            #         np.savetxt('%s/%s.csv'%(folder, idx), element)
+            #         np.save(open('%s/%s.npy'%(folder, idx), 'wb'), element)
+            #     elif type(element) is torch.Tensor:
+            #         np.savetxt('%s/%s.csv'%(folder, idx), element.detach().numpy())
+            #         torch.save(element, open('%s/%s.pt'%(folder, idx), 'wb'))
+
 
     def plot_training_metrics(self, folder: str='.'):
         """

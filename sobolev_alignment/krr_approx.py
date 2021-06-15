@@ -45,17 +45,19 @@ class KRRApprox:
 
     sklearn_kernel = {
         'rbf': 'wrapper',
+        'gaussian': 'wrapper',
         'laplacian': 'wrapper',
         'matern': Matern,
     }
     falkon_kernel = {
         'rbf': GaussianKernel,
+        'gaussian': GaussianKernel,
         'laplacian': LaplacianKernel,
         'matern': MaternKernel,
     }
     default_kernel_params = {
-        'falkon': { 'rbf': {'sigma': 1}, 'laplacian': {'sigma': 1}, 'matern': {'sigma': 1, 'nu': .5}},
-        'sklearn': { 'rbf': {}, 'laplacian': {}, 'matern': {}}
+        'falkon': { 'rbf': {'sigma': 1}, 'gaussian': {'sigma': 1}, 'laplacian': {'sigma': 1}, 'matern': {'sigma': 1, 'nu': .5}},
+        'sklearn': { 'rbf': {}, 'gaussian': {}, 'laplacian': {}, 'matern': {}}
     }
 
     def __init__(
@@ -269,13 +271,25 @@ class KRRApprox:
         # Save important material:
         #   - KRR weights
         #   - Samples used for prediction.
-        dump(self.sample_weights_, open('%s/sample_weights.pkl'%(folder), 'wb'))
-        dump(
-            torch.Tensor(self.anchors()),
-            open('%s/sample_anchors.pkl'%(folder), 'wb')
+        torch.save(
+            torch.Tensor(self.anchors()), 
+            open('%s/sample_anchors.pt'%(folder), 'wb')
         )
+        torch.save(
+            torch.Tensor(self.sample_weights_), 
+            open('%s/sample_weights.pt'%(folder), 'wb')
+        )
+        
         np.savetxt('%s/sample_weights.csv'%(folder), self.sample_weights_.detach().numpy())
         np.savetxt('%s/sample_anchors.csv'%(folder), self.anchors().detach().numpy())
+
+
+    def load(folder:str = '.'):
+        params = load(open('%s/params.pkl'%(folder), 'rb'))
+        krr_params = {e:f for e,f in params.items() if e in ['method', 'kernel', 'M', 'penalization', 'mean_center', 'unit_std']}
+        krr_approx_clf = KRRApprox(**params)
+
+        krr_approx_clf.self.sample_weights_()
 
 
 
