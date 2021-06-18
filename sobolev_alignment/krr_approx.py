@@ -208,19 +208,6 @@ class KRRApprox:
     def _process_coef_ridge_falkon(self):
         self.sample_weights_ = self.ridge_clf_.alpha_
 
-        # Finds training_idxs by matching product over rows
-
-        # mask = - torch.min(self.training_data_)
-        # mask = np.random.uniform(mask, mask+0.2, self.training_data_.shape[1])
-        # self._train_product = np.sum(np.log(self.training_data_.detach().numpy() + mask), axis=1)
-        # self._ny_product = np.sum(np.log(self.ridge_clf_.ny_points_.detach().numpy() + mask), axis=1)
-        # self.ridge_samples_idx_ = [np.where(self._train_product == x)[0] for x in self._ny_product]
-        # for x in self.ridge_samples_idx_:
-        #     if x.shape[0] == 0:
-        #         assert False
-        # self.ridge_samples_idx_ = [x[0] for x in self.ridge_samples_idx_]
-        # assert len(self.ridge_samples_idx_) == self.M
-
     def anchors(self):
         return self.training_data_
 
@@ -294,6 +281,10 @@ class KRRApprox:
         krr_approx_clf.training_data_ = torch.load(open('%s/sample_anchors.pt'%(folder), 'rb'))
 
         krr_approx_clf._setup_clf()
+        krr_approx_clf.ridge_clf_.ny_points_ = krr_approx_clf.training_data_
+        krr_approx_clf.ridge_clf_.alpha_ = krr_approx_clf.sample_weights_
+
+        return krr_approx_clf
 
 
 

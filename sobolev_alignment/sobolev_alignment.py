@@ -604,46 +604,62 @@ class SobolevAlignment:
                 torch.save(element, open('%s/%s.pt'%(folder, idx), 'wb'))
 
     def load(
-            self,
             folder: str = '.',
             with_krr: bool=True,
             with_model: bool=True
     ):
+        clf = SobolevAlignment()
+
         if with_model:
             for x in ['source', 'target']:
-                self.scvi_models[x] = scvi.model.SCVI.load(
+                clf.scvi_models[x] = scvi.model.SCVI.load(
                     '%s/scvi_model_%s'%(folder, x)
                 )
         
         if with_krr:
-            pass
-            # for x in ['source', 'target']:
-                # self.approximate_krr_regressions_[x] = save('%s/krr_approx_%s'%(folder, x))
+            clf.approximate_krr_regressions_ = {}
+            for x in ['source', 'target']:
+                clf.approximate_krr_regressions_[x] = KRRApprox.load('%s/krr_approx_%s/'%(folder, x))
 
-            # Save params
-            # pd.DataFrame(self.krr_params).to_csv('%s/krr_params.csv'%(folder))
-            # dump(self.krr_params, open('%s/krr_params.pkl'%(folder), 'wb'))
+            # Load params
+            clf.krr_params = load(open('%s/krr_params.pkl'%(folder), 'rb'))
+            clf.scvi_params = load(open('%s/scvi_params.pkl'%(folder), 'rb'))
 
-            # for param_t in ['model', 'plan', 'train']:
-            #     df = pd.DataFrame([self.scvi_params[x][param_t] for x in ['source', 'target']])
-            #     df.to_csv('%s/scvi_params_%s.csv'%(folder, param_t))
-            # dump(self.scvi_params, open('%s/scvi_params.pkl'%(folder), 'wb'))
+            # Load results
+            if 'alignment_M_X.npy' in os.listdir(folder):
+                clf.M_X = np.load('%s/alignment_M_X.npy'%(folder))
+            elif 'alignment_M_X.pt' in os.listdir(folder):
+                clf.M_X = torch.load(open('%s/alignment_M_X.pt'%(folder), 'rb'))
 
-            # # Save results
-            # results_elements = {
-            #     'alignment_M_X': self.M_X,
-            #     'alignment_M_Y': self.M_Y,
-            #     'alignment_M_XY': self.M_XY,
-            #     'alignment_cosine_sim': self.cosine_sim,
-            #     'alignment_principal_angles': self.principal_angles
-            # }
-            # for idx, element in results_elements.items():
-            #     if type(element) is np.ndarray:
-            #         np.savetxt('%s/%s.csv'%(folder, idx), element)
-            #         np.save(open('%s/%s.npy'%(folder, idx), 'wb'), element)
-            #     elif type(element) is torch.Tensor:
-            #         np.savetxt('%s/%s.csv'%(folder, idx), element.detach().numpy())
-            #         torch.save(element, open('%s/%s.pt'%(folder, idx), 'wb'))
+            if 'alignment_M_Y.npy' in os.listdir(folder):
+                clf.M_Y = np.load('%s/alignment_M_Y.npy'%(folder))
+            elif 'alignment_M_Y.pt' in os.listdir(folder):
+                clf.M_Y = torch.load(open('%s/alignment_M_Y.pt'%(folder), 'rb'))
+            
+            if 'alignment_M_XY.npy' in os.listdir(folder):
+                clf.M_XY = np.load('%s/alignment_M_XY.npy'%(folder))
+            elif 'alignment_M_XY.pt' in os.listdir(folder):
+                clf.M_XY = torch.load(open('%s/alignment_M_XY.pt'%(folder), 'rb'))
+            
+            if 'alignment_cosine_sim.npy' in os.listdir(folder):
+                clf.cosine_sim = np.load('%s/alignment_cosine_sim.npy'%(folder))
+            elif 'alignment_cosine_sim.pt' in os.listdir(folder):
+                clf.cosine_sim = torch.load(open('%s/alignment_cosine_sim.pt'%(folder), 'rb'))
+            
+            if 'alignment_principal_angles.npy' in os.listdir(folder):
+                clf.principal_angles = np.load('%s/alignment_principal_angles.npy'%(folder))
+            elif 'alignment_principal_angles.pt' in os.listdir(folder):
+                clf.principal_angles = torch.load(open('%s/alignment_principal_angles.pt'%(folder), 'rb'))
+
+            clf.sqrt_inv_M_X_ = mat_inv_sqrt(clf.M_X)
+            clf.sqrt_inv_M_Y_ = mat_inv_sqrt(clf.M_Y)
+            clf.sqrt_inv_matrices_ = {
+                'source': clf.sqrt_inv_M_X_,
+                'target': clf.sqrt_inv_M_Y_
+            }
+            clf._compute_principal_vectors()
+
+        return clf
 
 
     def plot_training_metrics(self, folder: str='.'):
@@ -706,6 +722,7 @@ class SobolevAlignment:
             input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(np.log10(self.training_data[data_type].X+1)))
         else:
             input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.training_data[data_type].X))
+        input_spearman_corr = np.array([scipy.stats.spearmanr(x,y)[0] for x,y in zip(input_krr_pred.T, latent.T)])
         input_krr_diff = input_krr_pred - latent
         input_mean_square = torch.square(input_krr_diff)
         input_factor_mean_square = torch.mean(input_mean_square, axis=0)
@@ -721,6 +738,7 @@ class SobolevAlignment:
         else:
             subsamples = np.arange(self.artificial_samples_[data_type].shape[0])
         training_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.artificial_samples_[data_type][subsamples]))
+        training_spearman_corr = np.array([scipy.stats.spearmanr(x,y)[0] for x,y in zip(training_krr_diff.T, self.artificial_embeddings_[data_type][subsamples].T)])
         training_krr_diff = training_krr_diff - self.artificial_embeddings_[data_type][subsamples]
         training_krr_factor_reconstruction_error = np.linalg.norm(training_krr_diff, axis=0) / np.linalg.norm(self.artificial_embeddings_[data_type][subsamples], axis=0)
         training_krr_latent_reconstruction_error = np.linalg.norm(training_krr_diff) / np.linalg.norm(self.artificial_embeddings_[data_type][subsamples])
@@ -735,6 +753,10 @@ class SobolevAlignment:
                     'input': input_factor_reconstruction_error,
                     'artificial': training_krr_factor_reconstruction_error
                 },
+                'spearmanr': {
+                    'input': np.array(input_spearman_corr),
+                    'artificial': np.array(training_spearman_corr)
+                },
             },
             'latent':{
                 'MSE': {
@@ -744,6 +766,10 @@ class SobolevAlignment:
                 'reconstruction_error': {
                     'input': input_latent_reconstruction_error,
                     'artificial': training_krr_latent_reconstruction_error
+                },
+                'spearmanr': {
+                    'input': np.mean(input_spearman_corr),
+                    'artificial': np.mean(training_spearman_corr)
                 },
             }
         }
@@ -772,8 +798,10 @@ class SobolevAlignment:
         else:
             self.gene_names = gene_names
 
-        self.basis_feature_weights_df = {
-            x: higher_order_contribution(
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.factor_level_feature_weights_df = {}
+        for x in self.training_data:
+            basis_feature_weights_df = higher_order_contribution(
                 d=max_order,
                 data=self.approximate_krr_regressions_[x].anchors().cpu().detach().numpy(),
                 sample_offset=self.sample_offset[x],
@@ -781,19 +809,15 @@ class SobolevAlignment:
                 gamma=self.gamma,
                 n_jobs=self.n_jobs
             )
-            for x in self.training_data
-        }
-
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.factor_level_feature_weights_df = {}
-        for x in self.training_data:
             index = np.arange(self.approximate_krr_regressions_[x].sample_weights_.T.shape[0])
-            columns = self.basis_feature_weights_df[x].columns
+            columns = basis_feature_weights_df.columns
             values = self.approximate_krr_regressions_[x].sample_weights_.T.to(device)
-            values = values.matmul(torch.Tensor(self.basis_feature_weights_df[x].values).to(device))
+            values = values.matmul(torch.Tensor(basis_feature_weights_df.values).to(device))
             self.factor_level_feature_weights_df[x] = pd.DataFrame(
                 values.cpu().detach().numpy(), index=index, columns=columns
             )
+            del basis_feature_weights_df
+            gc.collect()
 
         self.pv_level_feature_weights_df = {
             x: pd.DataFrame(

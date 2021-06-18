@@ -19,35 +19,62 @@ import pandas as pd
 import scipy
 from itertools import combinations_with_replacement
 from joblib import Parallel, delayed
+from functools import reduce
 
 
 def combination_to_idx(idx, p):
     return np.array([np.sum(np.array(idx) == i) for i in range(p)])
 
-
 def basis(x, k, gamma):
     if k == 0:
         return np.ones(x.shape[0])
+    
     product = x
     for i in range(1,k):
-        product = np.multiply(x,product)
+        product = x.multiply(product)
     coef = np.power(2*gamma,k/2) / np.sqrt(scipy.math.factorial(k))
 
     return coef * product
 
+# def basis(x, k, gamma):
+#     if k == 0:
+#         return np.ones(x.shape[0])
+#     product = x
+#     for i in range(1,k):
+#         product = np.multiply(x,product)
+#     coef = np.power(2*gamma,k/2) / np.sqrt(scipy.math.factorial(k))
+
+#     return coef * product
 
 def combinatorial_product(x, idx, gamma):
-    prod = np.prod([
+    prod = [
         basis(x[:,i], k, gamma)
-        for i,k in enumerate(combination_to_idx(idx, x.shape[1]))
-    ], axis=0)
-    return prod
+        for i,k in enumerate(combination_to_idx(idx, x.shape[1])) if k > 0
+    ]
+    if len(prod) == 0:
+        return 1
+    return reduce(scipy.sparse.csr_matrix.multiply, prod)
+
+# def combinatorial_product(x, idx, gamma):
+#     prod = np.prod([
+#         basis(x[:,i], k, gamma)
+#         for i,k in enumerate(combination_to_idx(idx, x.shape[1]))
+#     ], axis=0)
+#     return scipy.sparse.csr_matrix(prod)
 
 
-def interaction_name(gene_names, combi):
+# def interaction_name(gene_names, combi):
+#     involved_genes = np.where(combi > 0)
+#     combin_name = [
+#         '%s^%s' % (gene_names[idx], combi[idx])
+#         for idx in involved_genes
+#     ]
+#     return '*'.join(combin_name) if len(combin_name) > 0 else '1'
+
+def interaction_name(gene_combi):
     combin_name = [
-        '%s^%s' % (x, c)
-        for x, c in zip(gene_names, combi) if c > 0
+        '%s^%s' % (g, r)
+        for g, r in zip(*np.unique(gene_combi, return_counts=True))
     ]
     return '*'.join(combin_name) if len(combin_name) > 0 else '1'
 
@@ -57,7 +84,6 @@ def higher_order_interaction_wrapper(data, x, gamma, gene_names):
         interaction_name(gene_names, combination_to_idx(x, data.shape[1]))
     ]
 
-
 def higher_order_contribution(
         d: int,
         data: np.array,
@@ -66,18 +92,56 @@ def higher_order_contribution(
         gamma: float,
         n_jobs=1
 ):
-    print('START %s' % (d), flush=True)
-    combin_results = Parallel(n_jobs=n_jobs, verbose=1, max_nbytes=1e6)(
-        delayed(higher_order_interaction_wrapper)(data, x, gamma, gene_names)
-        for x in combinations_with_replacement(np.arange(data.shape[1]), r=d)
+    sparse_data = scipy.sparse.csr_matrix(data)
+    print('\t START FEATURES', flush=True)
+    combinations_features = Parallel(n_jobs=n_jobs, verbose=1, max_nbytes=1e6)(
+        delayed(combinatorial_product)(sparse_data, x, gamma)
+        for x in combinations_with_replacement(np.arange(sparse_data.shape[1]), r=d)
     )
-    combinations_features = np.array([c[0] for c in combin_results]).T
-    combinations_features = np.diag(sample_offset).dot(combinations_features)
+
+    print('\t START CONCATENATION', flush=True)
+    combinations_features = scipy.sparse.hstack(combinations_features)
+    combinations_features = scipy.sparse.diags(sample_offset).dot(combinations_features).todense()
+
+    combinations_names = Parallel(n_jobs=min(5,n_jobs), verbose=1, max_nbytes=1e4)(
+        delayed(interaction_name)(x)
+        for x in combinations_with_replacement(gene_names, r=d)
+    )
 
     return pd.DataFrame(
         data=combinations_features,
-        columns=[c[1] for c in combin_results]
+        columns=combinations_names
     )
+
+# def higher_order_contribution(
+#         d: int,
+#         data: np.array,
+#         sample_offset: np.array,
+#         gene_names: list,
+#         gamma: float,
+#         n_jobs=1
+# ):
+#     # sparse_data = scipy.sparse.csr_matrix(data)
+#     print('\t START FEATURES', flush=True)
+#     combinations_features = Parallel(n_jobs=n_jobs, verbose=1, max_nbytes=1e6)(
+#         delayed(combinatorial_product)(data, x, gamma)
+#         for x in combinations_with_replacement(np.arange(data.shape[1]), r=d)
+#     )
+    
+#     print('\t START CONCATENATION', flush=True)
+#     combinations_features = scipy.sparse.vstack(combinations_features).T
+#     combinations_features = scipy.sparse.diags(sample_offset).dot(combinations_features).todense()
+
+#     combinations_names = [
+#         interaction_name(gene_names, combination_to_idx(x, data.shape[1]))
+#         for x in combinations_with_replacement(np.arange(data.shape[1]), r=d)
+#     ]
+#     print(len(combinations_names))
+
+#     return pd.DataFrame(
+#         data=combinations_features,
+#         columns=combinations_names
+#     )
 
 # def higher_order_contribution(
 #         d: int,
