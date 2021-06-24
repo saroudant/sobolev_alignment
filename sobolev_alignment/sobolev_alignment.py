@@ -172,7 +172,7 @@ class SobolevAlignment:
                 save_mmap=save_mmap,
                 log_input=log_input,
                 n_samples_per_sample_batch=n_samples_per_sample_batch,
-                frac_save_artificial=frac_save_artificial
+                frac_save_artificial=frac_save_artificial,
             )
             return True
 
@@ -480,7 +480,12 @@ class SobolevAlignment:
 
         return artificial_embeddings
 
-    def _approximate_encoders(self, data_source:str, artificial_samples, artificial_embeddings):
+    def _approximate_encoders(
+        self, 
+        data_source:str, 
+        artificial_samples, 
+        artificial_embeddings
+    ):
         """
         Approximate the encoder by a KRR regression
         """
@@ -539,7 +544,7 @@ class SobolevAlignment:
         return self.approximate_krr_regressions_['source'].sample_weights_.T.matmul(K_XY).matmul(self.approximate_krr_regressions_['target'].sample_weights_)
 
     def _compute_principal_vectors(self):
-        cosine_svd = np.linalg.svd(self.cosine_sim, full_matrices=False)
+        cosine_svd = np.linalg.svd(self.cosine_sim, full_matrices=True)
         self.principal_angles = cosine_svd[1]
         self.untransformed_rotations_ = {
             'source': cosine_svd[0],
@@ -735,6 +740,31 @@ class SobolevAlignment:
         # KRR error of artificial data
         if size > 1:
             subsamples = np.random.choice(np.arange(self.artificial_samples_[data_type].shape[0]), size, replace=False)
+        elif size <= 0:
+            return {
+            'factor':{
+                    'MSE': {
+                        'input': input_factor_mean_square.detach().numpy()
+                    },
+                    'reconstruction_error': {
+                        'input': input_factor_reconstruction_error
+                    },
+                    'spearmanr': {
+                        'input': np.array(input_spearman_corr)
+                    },
+                },
+                'latent':{
+                    'MSE': {
+                        'input': input_latent_mean_square.detach().numpy()
+                    },
+                    'reconstruction_error': {
+                        'input': input_latent_reconstruction_error
+                    },
+                    'spearmanr': {
+                        'input': np.mean(input_spearman_corr)
+                    },
+                }
+            }
         else:
             subsamples = np.arange(self.artificial_samples_[data_type].shape[0])
         training_krr_diff = self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.artificial_samples_[data_type][subsamples]))

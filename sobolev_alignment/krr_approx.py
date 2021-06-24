@@ -24,6 +24,7 @@ import numpy as np
 from pickle import load, dump
 import torch
 import gc
+from sklearn.preprocessing import StandardScaler
 
 # Falkon import
 from falkon import Falkon, kernels
@@ -114,6 +115,8 @@ class KRRApprox:
         # Preprocessing
         self.mean_center = mean_center
         self.unit_std = unit_std
+        self.pre_process_ = StandardScaler(with_mean=mean_center, with_std=unit_std)
+
 
     def _make_kernel(self):
         """
@@ -156,10 +159,8 @@ class KRRApprox:
             sklearn functions.
         """
         self._setup_clf()
-        self.training_data_ = X
-        if self.mean_center:
-            self.mean_vector_ = self.training_data_.mean(0, keepdim=True)
-            self.training_data_ -= self.mean_vector_
+        self.pre_process_.fit(X)
+        self.training_data_ = torch.Tensor(self.pre_process_.transform(X))
 
         if self.method == 'sklearn':
             self.ridge_clf_.fit(self.kernel_(self.training_data_), y)
@@ -224,15 +225,12 @@ class KRRApprox:
             Tensor containing the artificial input (x_hat).
         """
 
-        if self.mean_center:
-            X -= self.mean_vector_
-        else:
-            pass
+        X_t = torch.Tensor(self.pre_process_.transform(X))
 
         if self.method == 'sklearn':
-            return self.ridge_clf_.predict(self.kernel_(X, self.training_data_))
+            return self.ridge_clf_.predict(self.kernel_(X_t, self.training_data_))
         elif self.method == 'falkon':
-            return self.ridge_clf_.predict(X)
+            return self.ridge_clf_.predict(X_t)
         else:
             raise NotImplementedError('%s not implemented. Choices: sklearn and falkon'%(self.method))
 
@@ -273,9 +271,10 @@ class KRRApprox:
 
     def load(folder:str = '.'):
         params = load(open('%s/params.pkl'%(folder), 'rb'))
-        krr_params = {e:f for e,f in params.items() if e in ['method', 'kernel', 'M', 'penalization', 'mean_center', 'unit_std']}
-        krr_params['kernel'] = krr_params['kernel'].kernel_name
+        krr_params = {e:f for e,f in params.items() if e in ['method', 'M', 'penalization', 'mean_center', 'unit_std']}
+        # krr_params['kernel'] = krr_params['kernel'].kernel_name
         krr_approx_clf = KRRApprox(**krr_params)
+        krr_approx_clf.kernel_ = params['kernel']
 
         krr_approx_clf.sample_weights_ = torch.load(open('%s/sample_weights.pt'%(folder), 'rb'))
         krr_approx_clf.training_data_ = torch.load(open('%s/sample_anchors.pt'%(folder), 'rb'))
