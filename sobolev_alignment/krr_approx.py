@@ -115,7 +115,7 @@ class KRRApprox:
         # Preprocessing
         self.mean_center = mean_center
         self.unit_std = unit_std
-        self.pre_process_ = StandardScaler(with_mean=mean_center, with_std=unit_std)
+        self.pre_process_ = StandardScaler(with_mean=mean_center, with_std=unit_std, copy=False)
 
 
     def _make_kernel(self):
@@ -160,7 +160,7 @@ class KRRApprox:
         """
         self._setup_clf()
         self.pre_process_.fit(X)
-        self.training_data_ = torch.Tensor(self.pre_process_.transform(X))
+        self.training_data_ = torch.Tensor(self.pre_process_.transform(torch.Tensor(X)))
 
         if self.method == 'sklearn':
             self.ridge_clf_.fit(self.kernel_(self.training_data_), y)

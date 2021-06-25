@@ -498,7 +498,7 @@ class SobolevAlignment:
         krr_approx = KRRApprox(**self.krr_params[data_source])
         
         krr_approx.fit(
-            torch.from_numpy(artificial_samples),
+            artificial_samples,
             torch.from_numpy(artificial_embeddings)
         )
 
