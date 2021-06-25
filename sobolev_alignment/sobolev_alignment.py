@@ -76,6 +76,7 @@ class SobolevAlignment:
             'target': target_krr_params if target_krr_params is not None else {'method': 'falkon'}
         }
         self._check_same_kernel() # Check whether source and target have the same kernel
+        self.scaler_ = {}
 
         # Create scVI models
         self.n_jobs = n_jobs
@@ -148,7 +149,9 @@ class SobolevAlignment:
                     log_input=log_input,
                     n_samples_per_sample_batch=n_samples_per_sample_batch,
                     frac_save_artificial=frac_save_artificial,
-                    n_krr_clfs=n_krr_clfs
+                    n_krr_clfs=n_krr_clfs,
+                    mean_center=self.mean_center,
+                    unit_std=self.unit_std
                 )
 
             # Comparison and alignment
@@ -233,17 +236,15 @@ class SobolevAlignment:
             del artificial_batches
             gc.collect()
 
-            # Standard Scaler
-            self.scaler_ = StandardScaler(with_mean=mean_center, with_std=unit_std, copy=False)
-            artificial_samples = self.scaler_.fit_transform(artificial_samples)
-
             # Store in memmap
             artificial_samples = self._memmap_log_processing(
                 data_source=data_source,
                 artificial_samples=artificial_samples,
                 artificial_embeddings=artificial_embeddings,
                 save_mmap=save_mmap,
-                log_input=log_input
+                log_input=log_input,
+                mean_center=mean_center,
+                unit_std=unit_std
             )
         else:
             artificial_samples = self.artificial_samples_[data_source]
@@ -453,18 +454,24 @@ class SobolevAlignment:
             artificial_samples,
             artificial_embeddings,
             save_mmap: str=None,
-            log_input: bool=False
+            log_input: bool=False,
+            mean_center: bool=False,
+            unit_std: bool=False
     ):
-        # If no save_mmap, then no log
+        # Save embedding
         if save_mmap is not None and type(save_mmap) == str:
             self._save_mmap = save_mmap
             self._memmap_embedding(data_source=data_source, artificial_embeddings=artificial_embeddings, save_mmap=save_mmap)
 
         self.krr_log_input_ = log_input
         if log_input:
-            if save_mmap is not None and type(save_mmap) == str:
-                artificial_samples = np.log10(artificial_samples + 1)
+            artificial_samples = np.log10(artificial_samples + 1)
 
+            # Standard Scaler
+            scaler_ = StandardScaler(with_mean=mean_center, with_std=unit_std)
+            artificial_samples = scaler_.fit_transform(np.array(artificial_samples))
+
+            if save_mmap is not None and type(save_mmap) == str:
                 #Re-save
                 np.save(
                     open('%s/%s_artificial_input.npy' % (save_mmap, data_source), 'wb'),
@@ -477,7 +484,7 @@ class SobolevAlignment:
                 gc.collect()
 
             else:
-                artificial_samples = np.log10(artificial_samples + 1)
+                pass
 
         return artificial_samples
 
