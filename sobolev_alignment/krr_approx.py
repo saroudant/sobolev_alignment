@@ -115,7 +115,7 @@ class KRRApprox:
         # Preprocessing
         self.mean_center = mean_center
         self.unit_std = unit_std
-        self.pre_process_ = StandardScaler(with_mean=mean_center, with_std=unit_std, copy=False)
+        # self.pre_process_ = StandardScaler(with_mean=mean_center, with_std=unit_std, copy=False)
 
 
     def _make_kernel(self):
@@ -159,8 +159,9 @@ class KRRApprox:
             sklearn functions.
         """
         self._setup_clf()
-        self.pre_process_.fit(X)
-        self.training_data_ = torch.Tensor(self.pre_process_.transform(torch.Tensor(X)))
+        # self.pre_process_.fit(X)
+        # self.training_data_ = torch.Tensor(self.pre_process_.transform(torch.Tensor(X)))
+        self.training_data_ = X
 
         if self.method == 'sklearn':
             self.ridge_clf_.fit(self.kernel_(self.training_data_), y)
@@ -225,12 +226,12 @@ class KRRApprox:
             Tensor containing the artificial input (x_hat).
         """
 
-        X_t = torch.Tensor(self.pre_process_.transform(X))
+        # X_t = torch.Tensor(self.pre_process_.transform(X))
 
         if self.method == 'sklearn':
-            return self.ridge_clf_.predict(self.kernel_(X_t, self.training_data_))
+            return self.ridge_clf_.predict(self.kernel_(X, self.training_data_))
         elif self.method == 'falkon':
-            return self.ridge_clf_.predict(X_t)
+            return self.ridge_clf_.predict(X)
         else:
             raise NotImplementedError('%s not implemented. Choices: sklearn and falkon'%(self.method))
 

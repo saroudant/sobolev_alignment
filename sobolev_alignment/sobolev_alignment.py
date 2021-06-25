@@ -23,6 +23,7 @@ import gc
 import scipy
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 import torch
 from anndata import AnnData
 import scvi
@@ -103,7 +104,9 @@ class SobolevAlignment:
             save_mmap: str = None,
             log_input: bool=False,
             n_krr_clfs: int=1,
-            no_posterior_collapse=False
+            no_posterior_collapse=False,
+            mean_center: bool=False,
+            unit_std: bool=False
     ):
         """
         Parameters
@@ -132,6 +135,8 @@ class SobolevAlignment:
 
             self.approximate_krr_regressions_ = {}
             if sample_artificial:
+                self.mean_center = mean_center
+                self.unit_std = unit_std
                 self.artificial_samples_ = {}
                 self.artificial_embeddings_ = {}
             for data_source in ['source', 'target']:
@@ -161,7 +166,9 @@ class SobolevAlignment:
             log_input: bool = True,
             n_samples_per_sample_batch:int = 10**5,
             frac_save_artificial: float=0.1,
-            n_krr_clfs: int = 1
+            n_krr_clfs: int = 1,
+            mean_center: bool=False,
+            unit_std: bool=False
     ):
 
         if n_krr_clfs == 1:
@@ -173,6 +180,8 @@ class SobolevAlignment:
                 log_input=log_input,
                 n_samples_per_sample_batch=n_samples_per_sample_batch,
                 frac_save_artificial=frac_save_artificial,
+                mean_center=mean_center,
+                unit_std=unit_std
             )
             return True
 
@@ -201,7 +210,9 @@ class SobolevAlignment:
             save_mmap: str = None,
             log_input: bool = True,
             n_samples_per_sample_batch: int = 10**5,
-            frac_save_artificial: float = 0.1
+            frac_save_artificial: float = 0.1,
+            mean_center: bool=False,
+            unit_std: bool=False
     ):
         # Generate samples (decoder)
         if sample_artificial:
@@ -221,6 +232,10 @@ class SobolevAlignment:
             )
             del artificial_batches
             gc.collect()
+
+            # Standard Scaler
+            self.scaler_ = StandardScaler(with_mean=mean_center, with_std=unit_std, copy=False)
+            artificial_samples = self.scaler_.fit_transform(artificial_samples)
 
             # Store in memmap
             artificial_samples = self._memmap_log_processing(
@@ -498,7 +513,7 @@ class SobolevAlignment:
         krr_approx = KRRApprox(**self.krr_params[data_source])
         
         krr_approx.fit(
-            artificial_samples,
+            torch.from_numpy(artificial_samples),
             torch.from_numpy(artificial_embeddings)
         )
 
