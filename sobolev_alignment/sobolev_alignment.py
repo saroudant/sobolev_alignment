@@ -745,10 +745,11 @@ class SobolevAlignment:
     def _compute_error_one_type(self, data_type, size=-1):
         # KRR error of input data
         latent = self.scvi_models[data_type].get_latent_representation()
+        input_krr_pred = self.training_data[data_type].X
         if self.krr_log_input_:
-            input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(np.log10(self.training_data[data_type].X+1)))
-        else:
-            input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(self.training_data[data_type].X))
+            input_krr_pred = np.log10(input_krr_pred+1)
+        input_krr_pred = StandardScaler(with_mean=self.mean_center, with_std=self.unit_std).fit_transform(input_krr_pred)
+        input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(input_krr_pred))
         input_spearman_corr = np.array([scipy.stats.spearmanr(x,y)[0] for x,y in zip(input_krr_pred.T, latent.T)])
         input_krr_diff = input_krr_pred - latent
         input_mean_square = torch.square(input_krr_diff)

@@ -166,7 +166,6 @@ class KRRApprox:
         if self.method == 'sklearn':
             self.ridge_clf_.fit(self.kernel_(self.training_data_), y)
         elif self.method == 'falkon':
-            print(self.training_data_)
             self.ridge_clf_.fit(self.training_data_, y)
 
         self._save_coefs()
