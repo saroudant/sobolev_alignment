@@ -107,7 +107,8 @@ class SobolevAlignment:
             n_krr_clfs: int=1,
             no_posterior_collapse=False,
             mean_center: bool=False,
-            unit_std: bool=False
+            unit_std: bool=False,
+            frob_norm_source: bool=False
     ):
         """
         Parameters
@@ -151,7 +152,8 @@ class SobolevAlignment:
                     frac_save_artificial=frac_save_artificial,
                     n_krr_clfs=n_krr_clfs,
                     mean_center=self.mean_center,
-                    unit_std=self.unit_std
+                    unit_std=self.unit_std,
+                    frob_norm_source=frob_norm_source
                 )
 
             # Comparison and alignment
@@ -171,7 +173,8 @@ class SobolevAlignment:
             frac_save_artificial: float=0.1,
             n_krr_clfs: int = 1,
             mean_center: bool=False,
-            unit_std: bool=False
+            unit_std: bool=False,
+            frob_norm_source: bool=False
     ):
 
         if n_krr_clfs == 1:
@@ -184,7 +187,8 @@ class SobolevAlignment:
                 n_samples_per_sample_batch=n_samples_per_sample_batch,
                 frac_save_artificial=frac_save_artificial,
                 mean_center=mean_center,
-                unit_std=unit_std
+                unit_std=unit_std,
+                frob_norm_source=frob_norm_source
             )
             return True
 
@@ -198,7 +202,8 @@ class SobolevAlignment:
                     save_mmap=save_mmap,
                     log_input=log_input,
                     n_samples_per_sample_batch=n_samples_per_sample_batch,
-                    frac_save_artificial=frac_save_artificial
+                    frac_save_artificial=frac_save_artificial,
+                    frob_norm_source=frob_norm_source
                 )
                 self.approximate_krr_regressions_[data_source].add_clf(krr_approx)
 
@@ -215,7 +220,8 @@ class SobolevAlignment:
             n_samples_per_sample_batch: int = 10**5,
             frac_save_artificial: float = 0.1,
             mean_center: bool=False,
-            unit_std: bool=False
+            unit_std: bool=False,
+            frob_norm_source: bool=False
     ):
         # Generate samples (decoder)
         if sample_artificial:
@@ -244,7 +250,8 @@ class SobolevAlignment:
                 save_mmap=save_mmap,
                 log_input=log_input,
                 mean_center=mean_center,
-                unit_std=unit_std
+                unit_std=unit_std,
+                frob_norm_source=frob_norm_source
             )
         else:
             artificial_samples = self.artificial_samples_[data_source]
@@ -456,8 +463,10 @@ class SobolevAlignment:
             save_mmap: str=None,
             log_input: bool=False,
             mean_center: bool=False,
-            unit_std: bool=False
+            unit_std: bool=False,
+            frob_norm_source: bool=False
     ):
+
         # Save embedding
         if save_mmap is not None and type(save_mmap) == str:
             self._save_mmap = save_mmap
@@ -470,6 +479,9 @@ class SobolevAlignment:
             # Standard Scaler
             scaler_ = StandardScaler(with_mean=mean_center, with_std=unit_std)
             artificial_samples = scaler_.fit_transform(np.array(artificial_samples))
+
+            # Frobenius norm scaling
+            artificial_samples = self._frobenius_normalisation(data_source, artificial_samples, frob_norm_source)
 
             if save_mmap is not None and type(save_mmap) == str:
                 #Re-save
@@ -486,8 +498,24 @@ class SobolevAlignment:
             else:
                 pass
 
+        else:
+            # Frobenius norm scaling
+            artificial_samples = self._frobenius_normalisation(data_source, artificial_samples, frob_norm_source)
+
         return artificial_samples
 
+    def _frobenius_normalisation(self, data_source, artificial_samples, frob_norm_source):
+        # Normalise to same Frobenius norm per sample
+        if frob_norm_source:
+            if data_source == 'source':
+                self._frob_norm_param = np.mean(np.linalg.norm(artificial_samples, axis=1))
+            else:
+                frob_norm = np.mean(np.linalg.norm(artificial_samples, axis=1))
+                artificial_samples = artificial_samples * self._frob_norm_param / frob_norm
+        else:
+            pass
+        
+        return artificial_samples
 
     def _memmap_embedding(self, data_source, artificial_embeddings, save_mmap):
         np.save(
