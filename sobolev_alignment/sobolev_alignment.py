@@ -916,13 +916,17 @@ class SobolevAlignment:
 
     def _gradient_expectation(self, data_type, n_samples):
         # Generate some samples
-        artificial_samples, artificial_batches = self._generate_artificial_samples(
-            data_source=data_source,
+        artificial_samples_, artificial_batches_ = self._generate_artificial_samples(
+            data_source=data_type,
             n_artificial_samples=n_samples,
             large_batch_size=10**5,
             save_mmap=False
         )
         artificial_samples_ = torch.Tensor(artificial_samples_)
+        artificial_batches_ = np.array([
+            np.where(self.scvi_models[data_type].scvi_setup_dict_['categorical_mappings']['_scvi_batch']['mapping'] == str(n))[0][0]
+            for n in artificial_batches_
+        ])
         artificial_batches_ = torch.Tensor(artificial_batches_.astype(int)).reshape(-1,1)
 
         # Compute embedding
@@ -933,12 +937,11 @@ class SobolevAlignment:
             'cat_covs': None
         }
         artificial_samples_.requires_grad = True
-        embedding_values = source_scvi_model.module.inference(**vae_input)['qz_m']
+        embedding_values = self.scvi_models[data_type].module.inference(**vae_input)['qz_m']
 
         # Compute the gradients element by element
         gradients = []
         for pv_idx in range(embedding_values.shape[1]):
-            print(pv_idx)
             for samples_idx in range(artificial_samples_.shape[0]):
                 b = embedding_values[samples_idx,pv_idx]
                 b.retain_grad()
