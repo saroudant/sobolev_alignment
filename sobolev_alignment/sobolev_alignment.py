@@ -319,7 +319,6 @@ class SobolevAlignment:
         return True
 
 
-
     def _generate_artificial_samples(
             self,
             data_source: str,
@@ -908,5 +907,47 @@ class SobolevAlignment:
             )
             for x in self.training_data
         }
+
+    def compute_gradients_factors(self, n_samples=10**4):
+        gradient_expectation_ = {}
+        for data_type in self.artificial_samples_:
+            gradient_expectation_[data_type] = self._gradient_expectation(data_type, n_samples)
+        return gradient_expectation_
+
+    def _gradient_expectation(self, data_type, n_samples):
+        # Generate some samples
+        artificial_samples, artificial_batches = self._generate_artificial_samples(
+            data_source=data_source,
+            n_artificial_samples=n_samples,
+            large_batch_size=10**5,
+            save_mmap=False
+        )
+        artificial_samples_ = torch.Tensor(artificial_samples_)
+        artificial_batches_ = torch.Tensor(artificial_batches_.astype(int)).reshape(-1,1)
+
+        # Compute embedding
+        vae_input = {
+            'x': artificial_samples_,
+            'batch_index': artificial_batches_,
+            'cont_covs': None,
+            'cat_covs': None
+        }
+        artificial_samples_.requires_grad = True
+        embedding_values = source_scvi_model.module.inference(**vae_input)['qz_m']
+
+        # Compute the gradients element by element
+        gradients = []
+        for pv_idx in range(embedding_values.shape[1]):
+            print(pv_idx)
+            for samples_idx in range(artificial_samples_.shape[0]):
+                b = embedding_values[samples_idx,pv_idx]
+                b.retain_grad()
+                b.backward(retain_graph=True)
+            gradients.append(torch.mean(artificial_samples_.grad, axis=0))
+            artificial_samples_.grad = None
+        
+        return torch.stack(gradients)
+
+
 
 
