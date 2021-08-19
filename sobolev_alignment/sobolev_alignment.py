@@ -20,6 +20,7 @@ import pandas as pd
 import seaborn as sns
 from pickle import load, dump
 import gc
+from copy import deepcopy
 import scipy
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
@@ -915,7 +916,7 @@ class SobolevAlignment:
             gradient_expectation_[data_type] = self._gradient_expectation(data_type, n_samples)
         return gradient_expectation_
 
-    def _gradient_expectation(self, data_type, n_samples):
+    def _gradient_expectation(self, data_type, n_samples, cuda_device=None):
         # Generate some samples
         artificial_samples_, artificial_batches_ = self._generate_artificial_samples(
             data_source=data_type,
@@ -923,12 +924,17 @@ class SobolevAlignment:
             large_batch_size=10**5,
             save_mmap=False
         )
-        artificial_samples_ = torch.Tensor(artificial_samples_)
+
+        if cuda_device is None:
+            device = "cuda" if torch.cuda.is_available() else 'cpu'
+        else:
+            device = cuda_device
+        artificial_samples_ = torch.Tensor(artificial_samples_).to(device)
         artificial_batches_ = np.array([
             np.where(self.scvi_models[data_type].scvi_setup_dict_['categorical_mappings']['_scvi_batch']['mapping'] == str(n))[0][0]
             for n in artificial_batches_
         ])
-        artificial_batches_ = torch.Tensor(artificial_batches_.astype(int)).reshape(-1,1)
+        artificial_batches_ = torch.Tensor(artificial_batches_.astype(int)).reshape(-1,1).to(device)
 
         # Compute embedding
         vae_input = {
@@ -938,7 +944,8 @@ class SobolevAlignment:
             'cat_covs': None
         }
         artificial_samples_.requires_grad = True
-        embedding_values = self.scvi_models[data_type].module.inference(**vae_input)['qz_m']
+        module = deepcopy(self.scvi_models[data_type].module).to(device)
+        embedding_values = module.inference(**vae_input)['qz_m']
 
         # Compute the gradients element by element
         gradients = []
