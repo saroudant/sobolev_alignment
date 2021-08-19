@@ -665,6 +665,7 @@ class SobolevAlignment:
         clf = SobolevAlignment()
 
         if with_model:
+            clf.scvi_models = {}
             for x in ['source', 'target']:
                 clf.scvi_models[x] = scvi.model.SCVI.load(
                     '%s/scvi_model_%s'%(folder, x)
