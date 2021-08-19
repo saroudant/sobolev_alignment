@@ -910,7 +910,7 @@ class SobolevAlignment:
 
     def compute_gradients_factors(self, n_samples=10**4):
         gradient_expectation_ = {}
-        for data_type in self.artificial_samples_:
+        for data_type in self.krr_params:
             gradient_expectation_[data_type] = self._gradient_expectation(data_type, n_samples)
         return gradient_expectation_
 
