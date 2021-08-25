@@ -594,7 +594,7 @@ class SobolevAlignment:
         return self.approximate_krr_regressions_['source'].sample_weights_.T.matmul(K_XY).matmul(self.approximate_krr_regressions_['target'].sample_weights_)
 
     def _compute_principal_vectors(self):
-        cosine_svd = np.linalg.svd(self.cosine_sim, full_matrices=True)
+        cosine_svd = np.linalg.svd(self.cosine_sim, full_matrices=False)
         self.principal_angles = cosine_svd[1]
         self.untransformed_rotations_ = {
             'source': cosine_svd[0],
