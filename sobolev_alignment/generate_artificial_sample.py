@@ -10,12 +10,14 @@ Use the generative nature of VAE to generate new samples.
 import torch
 import scvi
 import numpy as np
+import pandas as pd
 from joblib import Parallel, delayed
 
 
 def generate_samples(
         sample_size: int,
         batch_names,
+        covariates_values,
         lib_size,
         model,
         return_dist: bool=False
@@ -49,12 +51,21 @@ def generate_samples(
         batch_name_ids = []
         lib_size_samples = [lib_size] * int(sample_size)
 
+    # Process covariates
+    if covariates_values is None:
+        cont_covs = None
+    elif type(covariates_values) is pd.DataFrame:
+        cont_covs = torch.Tensor(covariates_values.values.astype(float))
+    elif type(covariates_values) is np.array:
+        cont_covs = torch.Tensor(covariates_values)
+
     # Generate random noise
     z = torch.Tensor(np.random.normal(size=(int(sample_size), model.init_params_['non_kwargs']['n_latent'])))
     dist_param_samples = model.module.generative(
         z=z,
         library=torch.Tensor(np.array(lib_size_samples).reshape(-1, 1)),
-        batch_index=torch.Tensor(np.array(batch_name_ids).reshape(-1, 1))
+        batch_index=torch.Tensor(np.array(batch_name_ids).reshape(-1, 1)),
+        cont_covs=cont_covs
     )
 
     # Sample from distribution
@@ -88,13 +99,14 @@ def generate_samples(
 
 def parallel_generate_samples(sample_size,
                               batch_names,
+                              covariates_values,
                               lib_size,
                               model,
                               return_dist=False,
                               batch_size=10**3,
                               n_jobs=1):
     results = Parallel(n_jobs=n_jobs, verbose=1)(
-            delayed(generate_samples)(batch_size, batch_names[i:i+batch_size], lib_size, model, return_dist)
+            delayed(generate_samples)(batch_size, batch_names[i:i+batch_size], covariates_values, lib_size, model, return_dist)
             for i in range(0,sample_size,batch_size)
     )
 

@@ -97,6 +97,7 @@ class SobolevAlignment:
             X_target: AnnData,
             source_batch_name: str = None,
             target_batch_name: str = None,
+            continuous_covariate_names: list = None,
             n_artificial_samples: int = int(10e5),
             fit_vae: bool = True,
             krr_approx: bool=True,
@@ -124,9 +125,15 @@ class SobolevAlignment:
             'source': X_source,
             'target': X_target
         }
+
         self.batch_name = {
             'source': source_batch_name,
             'target': target_batch_name
+        }
+
+        self.continuous_covariate_names = {
+            'source': continuous_covariate_names,
+            'target': continuous_covariate_names
         }
 
         # Train VAE
@@ -211,6 +218,7 @@ class SobolevAlignment:
             self.approximate_krr_regressions_[data_source].process_clfs()
             return True
 
+
     def _train_one_krr(
             self,
             data_source: str,
@@ -226,7 +234,7 @@ class SobolevAlignment:
     ):
         # Generate samples (decoder)
         if sample_artificial:
-            artificial_samples, artificial_batches = self._generate_artificial_samples(
+            artificial_samples, artificial_batches, artificial_covariates = self._generate_artificial_samples(
                 data_source=data_source,
                 n_artificial_samples=n_artificial_samples,
                 large_batch_size=n_samples_per_sample_batch,
@@ -237,10 +245,11 @@ class SobolevAlignment:
             artificial_embeddings = self._embed_artificial_samples(
                 artificial_samples=artificial_samples,
                 artificial_batches=artificial_batches,
+                artificial_covariates=artificial_covariates,
                 data_source=data_source,
                 large_batch_size=n_samples_per_sample_batch
             )
-            del artificial_batches
+            del artificial_batches, artificial_covariates
             gc.collect()
 
             # Store in memmap
@@ -290,8 +299,14 @@ class SobolevAlignment:
             scvi.data.setup_anndata(
                 self.training_data[x],
                 layer='counts',
-                batch_key=self.batch_name[x]
+                batch_key=self.batch_name[x],
+                continuous_covariate_keys=self.continuous_covariate_names[x]
             )
+
+            # Change covariates to float
+            if self.continuous_covariate_names[x] is not None:
+                for cov in self.continuous_covariate_names[x]:
+                    self.training_data[x].obs[cov] = self.training_data[x].obs[cov].astype(np.float64)
 
             latent_variable_variance = np.zeros(1)
             save_iter = 0
@@ -354,6 +369,7 @@ class SobolevAlignment:
         _generated_data = list(zip(*_generated_data))
         artificial_samples = np.concatenate(_generated_data[0])
         artificial_batches_ = np.concatenate(_generated_data[1])
+        artificial_covariates_ = pd.concat(_generated_data[2]) if _generated_data[2][0] is not None else None
         del _generated_data
         gc.collect()
 
@@ -368,7 +384,8 @@ class SobolevAlignment:
             )
             gc.collect()
 
-        return artificial_samples, artificial_batches_
+        return artificial_samples, artificial_batches_, artificial_covariates_
+
 
     def _generate_artificial_samples_batch(
             self,
@@ -376,9 +393,11 @@ class SobolevAlignment:
             data_source: str
     ):
         artificial_batches = self._sample_batches(n_artificial_samples=n_artificial_samples, data=data_source)
+        artificial_covariates = self._sample_covariates(n_artificial_samples=n_artificial_samples, data=data_source)
         artificial_samples = parallel_generate_samples(
                 sample_size=n_artificial_samples,
                 batch_names=artificial_batches,
+                covariates_values=artificial_covariates,
                 lib_size=self.lib_size[data_source],
                 model=self.scvi_models[data_source],
                 return_dist=False,
@@ -387,10 +406,13 @@ class SobolevAlignment:
         )
         non_zero_samples = torch.where(torch.sum(artificial_samples, axis=1) > 0)
         artificial_samples = artificial_samples[non_zero_samples]
-        artificial_batches = artificial_batches[non_zero_samples]
+        if artificial_covariates is not None:
+            artificial_covariates = artificial_covariates.iloc[non_zero_samples]
+        if artificial_batches is not None:
+            artificial_batches = artificial_batches[non_zero_samples]
         gc.collect()
 
-        return artificial_samples, artificial_batches
+        return artificial_samples, artificial_batches, artificial_covariates
 
     def _compute_batch_library_size(self):
         if self.batch_name['source'] is None or self.batch_name['target'] is None:
@@ -412,6 +434,7 @@ class SobolevAlignment:
             for x in self.training_data
         }
 
+
     def _sample_batches(self, n_artificial_samples, data):
         """
         Sample batches for either source or target.
@@ -425,10 +448,27 @@ class SobolevAlignment:
             size=int(n_artificial_samples)
         )
 
+
+    def _sample_covariates(self, n_artificial_samples, data):
+        """
+        Sample batches for either source or target.
+        """
+
+
+        if self.continuous_covariate_names[data] is None:
+            return None
+
+        return self.training_data[data].obs[self.continuous_covariate_names[data]].sample(
+            n_artificial_samples,
+            replace=True
+        )
+
+
     def _embed_artificial_samples(
             self,
             artificial_samples,
             artificial_batches,
+            artificial_covariates,
             data_source: str,
             large_batch_size=10**5
     ):
@@ -445,8 +485,17 @@ class SobolevAlignment:
             x_train = artificial_samples[start:end]
             train_obs = pd.DataFrame(
                 np.array(artificial_batches[start:end]),
-                columns=[self.batch_name[data_source]]
+                columns=[self.batch_name[data_source]],
+                index=np.arange(end-start)
             )
+            if artificial_covariates is not None:
+                train_obs = pd.concat(
+                    [train_obs, artificial_covariates.iloc[start:end].reset_index(drop=True)],
+                    ignore_index=True,
+                    axis=1
+                )
+                train_obs.columns = [self.batch_name[data_source], *self.continuous_covariate_names[data_source]]
+
             x_train_an = AnnData(x_train,
                                  obs=train_obs)
             x_train_an.layers['counts'] = x_train_an.X.copy()
@@ -454,6 +503,7 @@ class SobolevAlignment:
 
         # Forward these formatted samples
         return np.concatenate(embedding)
+
 
     def _memmap_log_processing(
             self,
@@ -504,6 +554,7 @@ class SobolevAlignment:
 
         return artificial_samples
 
+
     def _frobenius_normalisation(self, data_source, artificial_samples, frob_norm_source):
         # Normalise to same Frobenius norm per sample
         if frob_norm_source:
@@ -517,6 +568,7 @@ class SobolevAlignment:
         
         return artificial_samples
 
+
     def _memmap_embedding(self, data_source, artificial_embeddings, save_mmap):
         np.save(
             open('%s/%s_artificial_embedding.npy' % (save_mmap, data_source), 'wb'),
@@ -529,6 +581,7 @@ class SobolevAlignment:
         gc.collect()
 
         return artificial_embeddings
+
 
     def _approximate_encoders(
         self, 
@@ -554,6 +607,7 @@ class SobolevAlignment:
 
         return krr_approx
 
+
     def _compare_approximated_encoders(self):
         self.M_X = self._compute_cosine_sim_intra_dataset('source')
         self.M_Y = self._compute_cosine_sim_intra_dataset('target')
@@ -566,6 +620,7 @@ class SobolevAlignment:
             'target': self.sqrt_inv_M_Y_
         }
         self.cosine_sim = self.sqrt_inv_M_X_.dot(self.M_XY).dot(self.sqrt_inv_M_Y_)
+
 
     def _compute_cosine_sim_intra_dataset(
             self,
@@ -585,6 +640,7 @@ class SobolevAlignment:
         K = torch.Tensor(K)
         return krr_clf.sample_weights_.T.matmul(K).matmul(krr_clf.sample_weights_)
 
+
     def _compute_cross_cosine_sim(self):
         K_XY = self.approximate_krr_regressions_['target'].kernel_(
             self.approximate_krr_regressions_['source'].anchors(),
@@ -592,6 +648,7 @@ class SobolevAlignment:
         )
         K_XY = torch.Tensor(K_XY)
         return self.approximate_krr_regressions_['source'].sample_weights_.T.matmul(K_XY).matmul(self.approximate_krr_regressions_['target'].sample_weights_)
+
 
     def _compute_principal_vectors(self):
         cosine_svd = np.linalg.svd(self.cosine_sim, full_matrices=False)
@@ -604,6 +661,7 @@ class SobolevAlignment:
             x: self.untransformed_rotations_[x].T.dot(self.sqrt_inv_matrices_[x]).dot(self.approximate_krr_regressions_[x].sample_weights_.T.detach().numpy())
             for x in self.untransformed_rotations_
         }
+
 
     def save(
             self,
@@ -657,6 +715,7 @@ class SobolevAlignment:
             elif type(element) is torch.Tensor:
                 np.savetxt('%s/%s.csv'%(folder, idx), element.detach().numpy())
                 torch.save(element, open('%s/%s.pt'%(folder, idx), 'wb'))
+
 
     def load(
             folder: str = '.',
@@ -761,6 +820,7 @@ class SobolevAlignment:
         )
         plt.show()
 
+
     def compute_error(self, size=-1):
         """
         Compute error of the KRR approximation on the input (data used for VAE training) and used for KRR.
@@ -770,6 +830,7 @@ class SobolevAlignment:
             'source': self._compute_error_one_type('source', size=size),
             'target': self._compute_error_one_type('target', size=size)
         }
+
 
     def _compute_error_one_type(self, data_type, size=-1):
         # KRR error of input data
@@ -856,6 +917,7 @@ class SobolevAlignment:
             }
         }
 
+
     def feature_analysis(self,
                          max_order: int=1,
                          gene_names:list=None):
@@ -910,11 +972,13 @@ class SobolevAlignment:
             for x in self.training_data
         }
 
+
     def compute_gradients_factors(self, n_samples=10**4):
         gradient_expectation_ = {}
         for data_type in self.krr_params:
             gradient_expectation_[data_type] = self._gradient_expectation(data_type, n_samples)
         return gradient_expectation_
+
 
     def _gradient_expectation(self, data_type, n_samples, cuda_device=None):
         # Generate some samples
