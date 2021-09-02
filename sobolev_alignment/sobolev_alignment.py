@@ -404,6 +404,7 @@ class SobolevAlignment:
                 batch_size=min(10 ** 4, n_artificial_samples),
                 n_jobs=self.n_jobs
         )
+        
         non_zero_samples = torch.where(torch.sum(artificial_samples, axis=1) > 0)
         artificial_samples = artificial_samples[non_zero_samples]
         if artificial_covariates is not None:
@@ -982,11 +983,11 @@ class SobolevAlignment:
 
     def _gradient_expectation(self, data_type, n_samples, cuda_device=None):
         # Generate some samples
-        artificial_samples_, artificial_batches_ = self._generate_artificial_samples(
+        artificial_samples_, artificial_batches_, artificial_covariates_ = self._generate_artificial_samples(
             data_source=data_type,
             n_artificial_samples=n_samples,
             large_batch_size=10**5,
-            save_mmap=False
+            save_mmap=None
         )
 
         if cuda_device is None:
@@ -994,6 +995,7 @@ class SobolevAlignment:
         else:
             device = cuda_device
         artificial_samples_ = torch.Tensor(artificial_samples_).to(device)
+        artificial_covariates_ = torch.Tensor(artificial_covariates_.values.astype(float)).to(device)
         artificial_batches_ = np.array([
             np.where(self.scvi_models[data_type].scvi_setup_dict_['categorical_mappings']['_scvi_batch']['mapping'] == str(n))[0][0]
             for n in artificial_batches_
@@ -1004,7 +1006,7 @@ class SobolevAlignment:
         vae_input = {
             'x': artificial_samples_,
             'batch_index': artificial_batches_,
-            'cont_covs': None,
+            'cont_covs': artificial_covariates_.values,
             'cat_covs': None
         }
         artificial_samples_.requires_grad = True
