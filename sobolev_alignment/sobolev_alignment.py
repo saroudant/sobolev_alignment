@@ -404,7 +404,7 @@ class SobolevAlignment:
                 batch_size=min(10 ** 4, n_artificial_samples),
                 n_jobs=self.n_jobs
         )
-        
+
         non_zero_samples = torch.where(torch.sum(artificial_samples, axis=1) > 0)
         artificial_samples = artificial_samples[non_zero_samples]
         if artificial_covariates is not None:
