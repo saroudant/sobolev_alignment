@@ -995,18 +995,20 @@ class SobolevAlignment:
         else:
             device = cuda_device
         artificial_samples_ = torch.Tensor(artificial_samples_).to(device)
-        artificial_covariates_ = torch.Tensor(artificial_covariates_.values.astype(float)).to(device)
-        artificial_batches_ = np.array([
-            np.where(self.scvi_models[data_type].scvi_setup_dict_['categorical_mappings']['_scvi_batch']['mapping'] == str(n))[0][0]
-            for n in artificial_batches_
-        ])
-        artificial_batches_ = torch.Tensor(artificial_batches_.astype(int)).reshape(-1,1).to(device)
+        if artificial_covariates_ is not None:
+            artificial_covariates_ = torch.Tensor(artificial_covariates_.values.astype(float)).to(device)
+        if artificial_batches_ is not None:
+            artificial_batches_ = np.array([
+                np.where(self.scvi_models[data_type].scvi_setup_dict_['categorical_mappings']['_scvi_batch']['mapping'] == str(n))[0][0]
+                for n in artificial_batches_
+            ])
+            artificial_batches_ = torch.Tensor(artificial_batches_.astype(int)).reshape(-1,1).to(device)
 
         # Compute embedding
         vae_input = {
             'x': artificial_samples_,
-            'batch_index': artificial_batches_,
-            'cont_covs': artificial_covariates_.values,
+            'batch_index': artificial_batches_ if artificial_batches_ is not None else None,
+            'cont_covs': artificial_covariates_.values if artificial_covariates_ is not None else None,
             'cat_covs': None
         }
         artificial_samples_.requires_grad = True
