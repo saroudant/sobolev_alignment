@@ -280,10 +280,16 @@ class SobolevAlignment:
             subsampled_idx = np.random.choice(a=np.arange(n_artificial_samples), size=n_save, replace=False)
             self.artificial_samples_[data_source] = artificial_samples[subsampled_idx]
             del artificial_samples
-            gc.collect()
+            # Remove data in memmap
+            if save_mmap is not None:
+                os.remove('%s/%s_artificial_input.npy'%(save_mmap, data_source))
             self.artificial_embeddings_[data_source] = artificial_embeddings[subsampled_idx]
+            # Remove data in memmap
+            if save_mmap is not None:
+                os.remove('%s/%s_artificial_embedding.npy'%(save_mmap, data_source))
             del artificial_embeddings
             gc.collect()
+            torch.cuda.empty_cache()
 
         return krr_approx
 
