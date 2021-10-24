@@ -567,8 +567,8 @@ class SobolevAlignment:
         batch_end = batch_sizes[1:]
 
         # Format artificial samples to be fed into scVI.
-        for start, end in zip(batch_start, batch_end):
-            x_train = artificial_samples[start:end]
+        artificial_samples = [artificial_samples[start:end] for start, end in zip(batch_start, batch_end)]
+        for idx, (x_train, start, end) in enumerate(zip(artificial_samples, batch_start, batch_end)):
             train_obs = pd.DataFrame(
                 np.array(artificial_batches[start:end]),
                 columns=[self.batch_name[data_source]],
@@ -585,16 +585,14 @@ class SobolevAlignment:
             x_train_an = AnnData(x_train,
                                  obs=train_obs)
             x_train_an.layers['counts'] = x_train_an.X.copy()
-            corrected_artificial_samples = self.scvi_models[data_source].get_normalized_expression(
+            artificial_samples[idx] = self.scvi_models[data_source].get_normalized_expression(
                 x_train_an,
                 return_numpy=True,
                 library_size=DEFAULT_LIB_SIZE
             )
 
-            # Fill artificial samples
-            for row_idx in range(start, end):
-                for col_idx in range(corrected_artificial_samples.shape[1]):
-                    artificial_samples[row_idx,col_idx] = corrected_artificial_samples[row_idx-start, col_idx]
+        artificial_samples = np.concatenate(artificial_samples)
+        
 
 
         return artificial_samples
