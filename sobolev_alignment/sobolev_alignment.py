@@ -82,6 +82,9 @@ class SobolevAlignment:
         # Create scVI models
         self.n_jobs = n_jobs
 
+        # Initialize some values
+        self._frob_norm_param = None
+
     def _check_same_kernel(self):
         """
         Same kernel has to be used for source and kernel KRR.
@@ -110,7 +113,8 @@ class SobolevAlignment:
             no_posterior_collapse=False,
             mean_center: bool=False,
             unit_std: bool=False,
-            frob_norm_source: bool=False
+            frob_norm_source: bool=False,
+            lib_size_norm: bool=False
     ):
         """
         Parameters
@@ -161,7 +165,8 @@ class SobolevAlignment:
                     n_krr_clfs=n_krr_clfs,
                     mean_center=self.mean_center,
                     unit_std=self.unit_std,
-                    frob_norm_source=frob_norm_source
+                    frob_norm_source=frob_norm_source,
+                    lib_size_norm=lib_size_norm
                 )
 
             # Comparison and alignment
@@ -182,7 +187,8 @@ class SobolevAlignment:
             n_krr_clfs: int = 1,
             mean_center: bool=False,
             unit_std: bool=False,
-            frob_norm_source: bool=False
+            frob_norm_source: bool=False,
+            lib_size_norm: bool=False
     ):
 
         if n_krr_clfs == 1:
@@ -196,7 +202,8 @@ class SobolevAlignment:
                 frac_save_artificial=frac_save_artificial,
                 mean_center=mean_center,
                 unit_std=unit_std,
-                frob_norm_source=frob_norm_source
+                frob_norm_source=frob_norm_source,
+                lib_size_norm=lib_size_norm
             )
             return True
 
@@ -230,7 +237,8 @@ class SobolevAlignment:
             frac_save_artificial: float = 0.1,
             mean_center: bool=False,
             unit_std: bool=False,
-            frob_norm_source: bool=False
+            frob_norm_source: bool=False,
+            lib_size_norm: bool=False
     ):
         # Generate samples (decoder)
         if sample_artificial:
@@ -249,6 +257,17 @@ class SobolevAlignment:
                 data_source=data_source,
                 large_batch_size=n_samples_per_sample_batch
             )
+            gc.collect()
+
+            # If artificial samples must be normalized for library size
+            if lib_size_norm:
+                artificial_samples = self._correct_artificial_samples_lib_size(
+                    artificial_samples=artificial_samples,
+                    artificial_batches=artificial_batches,
+                    artificial_covariates=artificial_covariates,
+                    data_source=data_source,
+                    large_batch_size=n_samples_per_sample_batch
+                )
             del artificial_batches, artificial_covariates
             gc.collect()
 
@@ -512,6 +531,48 @@ class SobolevAlignment:
         return np.concatenate(embedding)
 
 
+    def _correct_artificial_samples_lib_size(
+            self,
+            artificial_samples,
+            artificial_batches,
+            artificial_covariates,
+            data_source: str,
+            large_batch_size=10**5
+    ):
+        """
+            Correct for library size the artificial samples.
+        """
+        # Divide in batches
+        n_artificial_samples = artificial_samples.shape[0]
+        batch_sizes = [large_batch_size] * (n_artificial_samples // large_batch_size) + [n_artificial_samples % large_batch_size]
+        batch_sizes = [0] + list(np.cumsum([x for x in batch_sizes if x > 0]))
+        batch_start = batch_sizes[:-1]
+        batch_end = batch_sizes[1:]
+
+        # Format artificial samples to be fed into scVI.
+        for start, end in zip(batch_start, batch_end):
+            x_train = artificial_samples[start:end]
+            train_obs = pd.DataFrame(
+                np.array(artificial_batches[start:end]),
+                columns=[self.batch_name[data_source]],
+                index=np.arange(end-start)
+            )
+            if artificial_covariates is not None:
+                train_obs = pd.concat(
+                    [train_obs, artificial_covariates.iloc[start:end].reset_index(drop=True)],
+                    ignore_index=True,
+                    axis=1
+                )
+                train_obs.columns = [self.batch_name[data_source], *self.continuous_covariate_names[data_source]]
+
+            x_train_an = AnnData(x_train,
+                                 obs=train_obs)
+            x_train_an.layers['counts'] = x_train_an.X.copy()
+            artificial_samples[start:end] = self.scvi_models[data_source].get_normalized_expression(x_train_an)
+
+        # Forward these formatted samples
+        return np.concatenate(embedding)
+
     def _memmap_log_processing(
             self,
             data_source: str,
@@ -723,6 +784,9 @@ class SobolevAlignment:
                 np.savetxt('%s/%s.csv'%(folder, idx), element.detach().numpy())
                 torch.save(element, open('%s/%s.pt'%(folder, idx), 'wb'))
 
+        if self._frob_norm_param is not None:
+            np.savetxt('%s/frob_norm_param.csv'%(folder), self._frob_norm_param)
+
 
     def load(
             folder: str = '.',
@@ -780,6 +844,9 @@ class SobolevAlignment:
                 'target': clf.sqrt_inv_M_Y_
             }
             clf._compute_principal_vectors()
+
+        if 'frob_norm_param.csv' is os.listdir(folder):
+            clf._frob_norm_param = np.loadtxt(open('%s/frob_norm_param.csv'%(folder), 'r'))
 
         return clf
 

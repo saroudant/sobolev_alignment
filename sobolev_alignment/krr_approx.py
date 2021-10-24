@@ -162,6 +162,7 @@ class KRRApprox:
         # self.pre_process_.fit(X)
         # self.training_data_ = torch.Tensor(self.pre_process_.transform(torch.Tensor(X)))
         self.training_data_ = X
+        self.training_label_ = y
 
         if self.method == 'sklearn':
             self.ridge_clf_.fit(self.kernel_(self.training_data_), y)

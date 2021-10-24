@@ -67,7 +67,8 @@ def higher_order_contribution(
         sample_offset: np.array,
         gene_names: list,
         gamma: float,
-        n_jobs=1
+        n_jobs=1,
+        return_matrix=False
 ):
     sparse_data = scipy.sparse.csc_matrix(data)
     print('\t START FEATURES', flush=True)
@@ -82,9 +83,9 @@ def higher_order_contribution(
     combinations_features = scipy.sparse.hstack(combinations_features, format='csc')
     print('\t\t START PRODUCT', flush=True)
     combinations_features = scipy.sparse.diags(sample_offset).dot(combinations_features)
-    print('\t\t DENSIFY', flush=True)
     gc.collect()
-    # combinations_features = combinations_features.todense()
+    if return_matrix:
+        return combinations_features
 
     print('\t\t FIND NAMES', flush=True)
     combinations_names = Parallel(n_jobs=min(5,n_jobs), verbose=1, max_nbytes=1e4, pre_dispatch=int(1.5*min(5,n_jobs)))(
@@ -92,10 +93,6 @@ def higher_order_contribution(
         for x in combinations_with_replacement(gene_names, r=d)
     )
 
-    # return pd.DataFrame(
-    #     data=combinations_features,
-    #     columns=combinations_names
-    # )
     return pd.DataFrame.sparse.from_spmatrix(
         data=combinations_features,
         columns=combinations_names
