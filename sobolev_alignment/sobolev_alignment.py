@@ -875,7 +875,7 @@ class SobolevAlignment:
             }
             clf._compute_principal_vectors()
 
-        if 'frob_norm_param.csv' is os.listdir(folder):
+        if 'frob_norm_param.csv' in os.listdir(folder):
             clf._frob_norm_param = np.loadtxt(open('%s/frob_norm_param.csv'%(folder), 'r'))
 
         return clf
