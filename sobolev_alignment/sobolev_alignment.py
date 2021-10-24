@@ -568,10 +568,13 @@ class SobolevAlignment:
             x_train_an = AnnData(x_train,
                                  obs=train_obs)
             x_train_an.layers['counts'] = x_train_an.X.copy()
-            artificial_samples[start:end] = self.scvi_models[data_source].get_normalized_expression(x_train_an)
+            artificial_samples[start:end] = self.scvi_models[data_source].get_normalized_expression(
+                x_train_an,
+                return_numpy=True
+            )
+            
+        return artificial_samples
 
-        # Forward these formatted samples
-        return np.concatenate(embedding)
 
     def _memmap_log_processing(
             self,
