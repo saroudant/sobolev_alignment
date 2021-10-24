@@ -143,6 +143,20 @@ class SobolevAlignment:
             'target': continuous_covariate_names
         }
 
+        self._fit_params = {
+            'sample_artificial': sample_artificial,
+            'n_samples_per_sample_batch': n_samples_per_sample_batch,
+            'frac_save_artificial': frac_save_artificial,
+            'save_mmap': save_mmap,
+            'log_input': log_input,
+            'n_krr_clfs': n_krr_clfs,
+            'no_posterior_collapse': no_posterior_collapse,
+            'mean_center': mean_center,
+            'unit_std': unit_std,
+            'frob_norm_source': frob_norm_source,
+            'lib_size_norm': lib_size_norm
+        }
+
         # Train VAE
         if fit_vae:
             self._train_scvi_modules(no_posterior_collapse=no_posterior_collapse)
@@ -571,11 +585,17 @@ class SobolevAlignment:
             x_train_an = AnnData(x_train,
                                  obs=train_obs)
             x_train_an.layers['counts'] = x_train_an.X.copy()
-            artificial_samples[start:end] = self.scvi_models[data_source].get_normalized_expression(
+            corrected_artificial_samples = self.scvi_models[data_source].get_normalized_expression(
                 x_train_an,
                 return_numpy=True,
                 library_size=DEFAULT_LIB_SIZE
             )
+
+            # Fill artificial samples
+            for row_idx in range(start, end):
+                for col_idx in range(corrected_artificial_samples.shape[1]):
+                    artificial_samples[row_idx,col_idx] = corrected_artificial_samples[row_idx-start, col_idx]
+
 
         return artificial_samples
 
@@ -775,6 +795,9 @@ class SobolevAlignment:
             df.to_csv('%s/scvi_params_%s.csv'%(folder, param_t))
         dump(self.scvi_params, open('%s/scvi_params.pkl'%(folder), 'wb'))
 
+        pd.DataFrame(self._fit_params, index=['params']).to_csv('%s/fit_params.csv'%(folder))
+        dump(self._fit_params, open('%s/fit_params.pkl'%(folder), 'wb'))
+
         # Save results
         results_elements = {
             'alignment_M_X': self.M_X,
@@ -817,6 +840,8 @@ class SobolevAlignment:
             # Load params
             clf.krr_params = load(open('%s/krr_params.pkl'%(folder), 'rb'))
             clf.scvi_params = load(open('%s/scvi_params.pkl'%(folder), 'rb'))
+            if 'fit_params.pkl' in os.listdir(folder):
+                clf._fit_params = load(open('%s/fit_params.pkl'%(folder), 'rb'))
 
             # Load results
             if 'alignment_M_X.npy' in os.listdir(folder):
@@ -916,9 +941,16 @@ class SobolevAlignment:
     def _compute_error_one_type(self, data_type, size=-1):
         # KRR error of input data
         latent = self.scvi_models[data_type].get_latent_representation()
-        input_krr_pred = self.training_data[data_type].X
+        if self._fit_params['lib_size_norm']:
+            input_krr_pred = self.scvi_models[data_type].get_normalized_expression(
+                return_numpy=True,
+                library_size=DEFAULT_LIB_SIZE
+            )
+        else:
+            input_krr_pred = self.training_data[data_type].X
         if self.krr_log_input_:
             input_krr_pred = np.log10(input_krr_pred+1)
+
         input_krr_pred = StandardScaler(with_mean=self.mean_center, with_std=self.unit_std).fit_transform(input_krr_pred)
         input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(input_krr_pred))
         input_spearman_corr = np.array([scipy.stats.spearmanr(x,y)[0] for x,y in zip(input_krr_pred.T, latent.T)])
