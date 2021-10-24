@@ -36,6 +36,9 @@ from .feature_analysis import higher_order_contribution, _compute_offset
 from .multi_krr_approx import MultiKRRApprox
 
 
+# Default library size used when re-scaling artificial data
+DEFAULT_LIB_SIZE = 10**3
+
 class SobolevAlignment:
     """
 
@@ -570,9 +573,10 @@ class SobolevAlignment:
             x_train_an.layers['counts'] = x_train_an.X.copy()
             artificial_samples[start:end] = self.scvi_models[data_source].get_normalized_expression(
                 x_train_an,
-                return_numpy=True
+                return_numpy=True,
+                library_size=DEFAULT_LIB_SIZE
             )
-            
+
         return artificial_samples
 
 
