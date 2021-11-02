@@ -41,6 +41,7 @@ def generate_samples(
             np.where(model.scvi_setup_dict_['categorical_mappings']['_scvi_batch']['mapping'] == str(n))[0][0]
             for n in batch_names
         ]
+        batch_name_ids = torch.Tensor(np.array(batch_name_ids).reshape(-1, 1))
         # Recover log library size (exponential)
         lib_size_samples = np.array([
             np.random.choice(lib_size[n], 1)[0]
@@ -48,8 +49,12 @@ def generate_samples(
         ])
         lib_size_samples = np.log(lib_size_samples)
     else:
-        batch_name_ids = []
-        lib_size_samples = [lib_size] * int(sample_size)
+        batch_name_ids = None
+        lib_size_samples = np.random.choice(
+            np.array(lib_size).flatten(), 
+            sample_size
+        )
+        lib_size_samples = np.log(lib_size_samples)
 
     # Process covariates
     if covariates_values is None:
@@ -64,7 +69,7 @@ def generate_samples(
     dist_param_samples = model.module.generative(
         z=z,
         library=torch.Tensor(np.array(lib_size_samples).reshape(-1, 1)),
-        batch_index=torch.Tensor(np.array(batch_name_ids).reshape(-1, 1)),
+        batch_index=batch_name_ids,
         cont_covs=cont_covs
     )
 

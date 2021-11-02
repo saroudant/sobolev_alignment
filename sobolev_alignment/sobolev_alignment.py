@@ -410,8 +410,8 @@ class SobolevAlignment:
         ]
         _generated_data = list(zip(*_generated_data))
         artificial_samples = np.concatenate(_generated_data[0])
-        artificial_batches_ = np.concatenate(_generated_data[1])
-        artificial_covariates_ = pd.concat(_generated_data[2]) if _generated_data[2][0] is not None else None
+        artificial_batches_ = np.concatenate(_generated_data[1]) if self.batch_name[data_source] is not None else None
+        artificial_covariates_ = pd.concat(_generated_data[2]) if self.continuous_covariate_names[data_source] is not None else None
         del _generated_data
         gc.collect()
 
@@ -527,8 +527,8 @@ class SobolevAlignment:
         for start, end in zip(batch_start, batch_end):
             x_train = artificial_samples[start:end]
             train_obs = pd.DataFrame(
-                np.array(artificial_batches[start:end]),
-                columns=[self.batch_name[data_source]],
+                np.array(artificial_batches[start:end]) if artificial_batches is not None else [],
+                columns=[self.batch_name[data_source]] if artificial_batches is not None else [],
                 index=np.arange(end-start)
             )
             if artificial_covariates is not None:
@@ -948,6 +948,13 @@ class SobolevAlignment:
             input_krr_pred = self.training_data[data_type].X
         if self.krr_log_input_:
             input_krr_pred = np.log10(input_krr_pred+1)
+
+        if data_type == ' target':
+            input_krr_pred = _frobenius_normalisation(
+                data_type,
+                input_krr_pred, 
+                self._frob_norm_param is not None
+            )
 
         input_krr_pred = StandardScaler(with_mean=self.mean_center, with_std=self.unit_std).fit_transform(input_krr_pred)
         input_krr_pred =  self.approximate_krr_regressions_[data_type].transform(torch.Tensor(input_krr_pred))
