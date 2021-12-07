@@ -374,6 +374,10 @@ class SobolevAlignment:
                     latent_variable_variance = np.var(embedding, axis=0)
                     save_iter += 1
 
+                if save_iter > 0 and save_iter % 5 == 0:
+                    print('\t SCVI: REMOVE ONE LATENT VARIABLE TO AVOID POSTERIOR COLLAPSE')
+                    self.scvi_params[x]['model']['n_latent'] = self.scvi_params[x]['model']['n_latent'] - 1
+
         return True
 
 
