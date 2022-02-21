@@ -1,33 +1,73 @@
 """
-SOBOLEV ALIGNMENT
+<h2>Sobolev Alignment</h2>
 
 @author: Soufiane Mourragui
 
-Main module for the Sobolev Alignment framework.
+Example
+-------
+    ::
+    from anndata import AnnData
+    import numpy as np
+    import pandas as pd
+    from sobolev_alignment import SobolevAlignment
+
+    # Generate data
+    n_source = 100
+    n_target = 200
+    n_features = 500
+
+    X_source = np.random.normal(size=(n_source, n_features))
+    X_source = np.exp(X_source + np.random.randint(3,10,n_features)).astype(int)
+    X_source = AnnData(
+        X_source,
+        obs=pd.DataFrame(np.random.choice(['A','B'], n_source).astype(str), columns=['pool'])
+    )
+
+    X_target = np.random.normal(size=(n_target, n_features))
+    X_target = np.exp(X_target + np.random.randint(3,10,n_features)).astype(int)
+    X_target = AnnData(
+        X_target, 
+        obs=pd.DataFrame(np.random.choice(['A','B'], n_target).astype(str), columns=['pool'])
+    )
+
+    # Create a Sobolev Alignemnt instance
+    sobolev_alignment_clf = SobolevAlignment(
+        source_scvi_params={'train': {'early_stopping': True}, 'model': {}, 'plan': {}},
+        target_scvi_params={'train': {'early_stopping': True}, 'model': {}, 'plan': {}},
+        n_jobs=2
+    )
+    
+    # Compute consensus features
+    sobolev_alignment_clf.fit(
+        X_source, X_target,
+        source_batch_name='pool', target_batch_name='pool'
+    )
+    ::
+
 
 
 Notes
 -------
-	-
+	- 
 
 References
 -------
+[1] Mourragui et al 2022
+[2] Lopez et al, Deep generative modeling for single-cell transcriptomics, Nature Methods, 2018.
+[3] Meanti et al, Kernel methods through the roof: handling billions of points efficiently,
+NeurIPS, 2020.
 """
 
-import os, sys
+import os, sys, gc, scipy, torch, scvi, logging
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from pickle import load, dump
-import gc
 from copy import deepcopy
-import scipy
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-import torch
 from anndata import AnnData
-import scvi
 
 from .generate_artificial_sample import parallel_generate_samples
 from .krr_approx import KRRApprox
@@ -41,7 +81,7 @@ DEFAULT_LIB_SIZE = 10**3
 
 class SobolevAlignment:
     """
-
+    
     """
 
     default_scvi_params = {
@@ -51,12 +91,12 @@ class SobolevAlignment:
     }
 
     def __init__(
-            self,
-            source_scvi_params: dict = None,
-            target_scvi_params: dict = None,
-            source_krr_params: dict = None,
-            target_krr_params: dict = None,
-            n_jobs=1
+        self,
+        source_scvi_params: dict = None,
+        target_scvi_params: dict = None,
+        source_krr_params: dict = None,
+        target_krr_params: dict = None,
+        n_jobs=1
     ):
         """
         Parameters
@@ -88,61 +128,136 @@ class SobolevAlignment:
         # Initialize some values
         self._frob_norm_param = None
 
-    def _check_same_kernel(self):
-        """
-        Same kernel has to be used for source and kernel KRR.
-        """
-        if 'kernel' in self.krr_params['source'] or 'kernel' in self.krr_params['target']:
-            assert self.krr_params['source']['kernel'] == self.krr_params['target']['kernel']
-        if 'kernel_params' in  self.krr_params['source'] or 'kernel_params' in  self.krr_params['target']:
-            assert self.krr_params['source']['kernel_params'] == self.krr_params['target']['kernel_params']
-
     def fit(
-            self,
-            X_source: AnnData,
-            X_target: AnnData,
-            source_batch_name: str = None,
-            target_batch_name: str = None,
-            continuous_covariate_names: list = None,
-            n_artificial_samples: int = int(10e5),
-            fit_vae: bool = True,
-            krr_approx: bool=True,
-            sample_artificial: bool=True,
-            n_samples_per_sample_batch: int=10**6,
-            frac_save_artificial: float = 0.1,
-            save_mmap: str = None,
-            log_input: bool=False,
-            n_krr_clfs: int=1,
-            no_posterior_collapse=False,
-            mean_center: bool=False,
-            unit_std: bool=False,
-            frob_norm_source: bool=False,
-            lib_size_norm: bool=False
+        self,
+        X_source: AnnData,
+        X_target: AnnData,
+        source_batch_name: str = None,
+        target_batch_name: str = None,
+        continuous_covariate_names: list = None,
+        n_artificial_samples: int = int(10e5),
+        fit_vae: bool = True,
+        krr_approx: bool=True,
+        sample_artificial: bool=True,
+        n_samples_per_sample_batch: int=10**6,
+        frac_save_artificial: float = 0.1,
+        save_mmap: str = None,
+        log_input: bool = True,
+        n_krr_clfs: int = 1,
+        no_posterior_collapse = True,
+        mean_center: bool = False,
+        unit_std: bool = False,
+        frob_norm_source: bool = False,
+        lib_size_norm: bool = False
     ):
         """
+        Runs the complete Sobolev Alignment workflow between a source (e.g. cell line) and a target (e.g. tumor) dataset.
+        <br/>
+        Source and target data should be passed as AnnData and potential batch names (source_batch_name, target_batch_name)
+        should be part of the "obs" element of X_source and X_target.
+        <br/>
+        We allow the user to set all possible parameters from this API. However, the following choices were made in the manuscript
+        presenting Sobolev Alignment (ref [1]):
+        <ul>
+            <li> source_batch_name and target_batch_name set to the experimental batch of cell lines and tumors respectively, allowing
+            to use native scVI batch-effect correction within cell lines and tumors.
+            <li> continuous_covariate_names set to None.
+            <li> n_artificial_samples set to 10e7. In absence of large computing resource, a lower number (e.g. 10e6) could be used.
+            <li> fit_vae, krr_approx and sample_artificial are set to True (running the complete pipeline) but playing with these
+            three parameters allow to test different combination (e.g. kernel, penalization, number of artificial samples, ...)
+            <li> n_samples_per_sample_batch set to 10e6. When not used on GPU, we recommend using 5*10e5.
+            <li> save_mmap is set to /tmp/. This allows to save the model points in memory.
+            <li> log_input and no_posterior_collapse are set to True.
+            <li> All other parameters are False and n_krr_clfs is 1.
+        </ul>
+
         Parameters
         ----------
-        X_source
+        X_source: AnnData
             Source data.
-        X_target
+
+        X_target: AnnData
             Target data.
+
+        source_batch_name: str, default to None
+            Name of the batch to use in scVI for batch-effect correction. If None, no batch-effect correction
+            performed at the source-level.
+
+        target_batch_name: str, default to None
+            Name of the batch to use in scVI for batch-effect correction. If None, no batch-effect correction
+            performed at the target-level.
+
+        continuous_covariate_names: str, default to None
+            Name of continuous covariate to use in scVI training. Will be used for both source and target.
+
+        n_artificial_samples: int, default to 10e5
+            Number of points to sample in both source and target scVI models in approximation. This corresponds to
+            the number of "model points" used in the Kernel Ridge Regression step of source and target.
+
+        fit_vae: bool, default to True
+            Whether a scVI model (VAE) should be trained. If pre-trained VAEs are available, setting the "scvi_models_" 
+            to these models and using fit_vae=False would allow to directly use these models.
+
+        krr_approx: bool, default to True
+            Whether the KRR approximation should be performed for source and target scVI models.
+
+        sample_artificial: bool, default to True
+            Whether model points should be sampled. In the case when artificial samples have already been sampled and
+            saved, setting sample_artificial=False allows to use these points without need for re-sampling.
+
+        n_samples_per_sample_batch: int, default to 10e6
+            Number of samples per batch for sampling model points. This parameter does not affect the end-result, but 
+            can be used to alleviate memory issues in case of large n_artificial_samples.
+
+        frac_save_artificial: float, default to 0.1
+            Proportion of model points (artificial samples) to keep in memory. In case when several KRR models are trained
+            this must be set to 1.
+            <br/> Setting frac_save_artificial to 0.1 allows to compute the KRR approximation training error after the
+            complete alignment.
+
+        save_mmap: str, default to None
+            Folder on disk to use for saving the model points (artificial data). This allows to limit the memory usage and 
+            therefore use larger KRR training data. If None, then artificial samples are kept in memory.
+            <br/> This parameter does not affect the final prediction, simply the memory footprint.
+
+        log_input: bool, default to True
+            Whether model points (artificial samples) are log-transformed before being given as input to KRR. Log-transform
+            usually increases approximation performance.
+
+        n_krr_clfs: int, default to 1
+            (Prototype) Number of KRR models to use. If larger than 1, the models prediction will be averaged. Experiments show
+            no improvements when using more than one classifier.
+
+        no_posterior_collapse: bool, default to True
+            Whether posterior collapse should be avoided. If True, then scVI model is re-trained until no hidden neuron is
+            collapsed. Every five iteration, one hidden neuron gets removed.
+
+        mean_center: bool, default to False
+            Whether model points (artificial samples) should be mean-centered before KRR.
+        
+        unit_std: bool, default to False
+            Whether model points (artificial samples) should be standardized before KRR.
+
+        frob_norm_source: bool, default to False
+            In case when source and target data have a vastly different scale, frob_norm_source=True would correct the
+            target model points (artificial samples) to have a median sample-wise Frobenius norm equal to the median
+            sample-wise Frobenius norm of the source model points.
+
+        lib_size_norm: bool, default to False
+            Whether model points should be used with equal library size.
+
+        Returns
+        -------
+        self: fitted Sobolev Alignment instance.
+
         """
 
-        self.training_data = {
-            'source': X_source,
-            'target': X_target
-        }
+        # Save data
+        self.training_data = {'source': X_source, 'target': X_target}
+        self.batch_name = {'source': source_batch_name, 'target': target_batch_name}
+        self.continuous_covariate_names = {'source': continuous_covariate_names, 'target': continuous_covariate_names}
 
-        self.batch_name = {
-            'source': source_batch_name,
-            'target': target_batch_name
-        }
-
-        self.continuous_covariate_names = {
-            'source': continuous_covariate_names,
-            'target': continuous_covariate_names
-        }
-
+        # Save fitting parameters
         self._fit_params = {
             'sample_artificial': sample_artificial,
             'n_samples_per_sample_batch': n_samples_per_sample_batch,
@@ -161,6 +276,7 @@ class SobolevAlignment:
         if fit_vae:
             self._train_scvi_modules(no_posterior_collapse=no_posterior_collapse)
 
+        # Approximate scVI models by KRR models
         if krr_approx:
             self.lib_size = self._compute_batch_library_size()
 
@@ -191,6 +307,7 @@ class SobolevAlignment:
             self._compute_principal_vectors()
 
         return self
+
 
     def _train_krr(
             self,
@@ -353,7 +470,7 @@ class SobolevAlignment:
             latent_variable_variance = np.zeros(1)
             save_iter = 0
             while np.any(latent_variable_variance<0.2):
-                print('START TRAINING %s model number %s'%(x, save_iter), flush=True)
+                logging.info('START TRAINING %s model number %s'%(x, save_iter))
                 try:
                     self.scvi_models[x] = scvi.model.SCVI(
                         self.training_data[x],
@@ -363,7 +480,7 @@ class SobolevAlignment:
                         plan_kwargs=self.scvi_params[x]['plan'],
                         **self.scvi_params[x]['train'])
                 except Exception as err:
-                    print('\n SCVI TRAINING ERROR: \n %s \n\n\n\n'%(err))
+                    logging.error('\n SCVI TRAINING ERROR: \n %s \n\n\n\n'%(err))
                     latent_variable_variance = np.zeros(1)
                     continue
 
@@ -375,7 +492,7 @@ class SobolevAlignment:
                     save_iter += 1
 
                 if save_iter > 0 and save_iter % 5 == 0:
-                    print('\t SCVI: REMOVE ONE LATENT VARIABLE TO AVOID POSTERIOR COLLAPSE')
+                    logging.info('\t SCVI: REMOVE ONE LATENT VARIABLE TO AVOID POSTERIOR COLLAPSE')
                     self.scvi_params[x]['model']['n_latent'] = self.scvi_params[x]['model']['n_latent'] - 1
 
         return True
@@ -461,6 +578,7 @@ class SobolevAlignment:
 
         return artificial_samples, artificial_batches, artificial_covariates
 
+
     def _compute_batch_library_size(self):
         if self.batch_name['source'] is None or self.batch_name['target'] is None:
             return {
@@ -480,6 +598,15 @@ class SobolevAlignment:
             }
             for x in self.training_data
         }
+
+    def _check_same_kernel(self):
+        """
+        Same kernel has to be used for source and kernel KRR.
+        """
+        if 'kernel' in self.krr_params['source'] or 'kernel' in self.krr_params['target']:
+            assert self.krr_params['source']['kernel'] == self.krr_params['target']['kernel']
+        if 'kernel_params' in  self.krr_params['source'] or 'kernel_params' in  self.krr_params['target']:
+            assert self.krr_params['source']['kernel_params'] == self.krr_params['target']['kernel_params']
 
 
     def _sample_batches(self, n_artificial_samples, data):
@@ -1155,6 +1282,79 @@ class SobolevAlignment:
         
         return torch.stack(gradients)
 
+    def sample_random_vector_(self, data_source, K):
+        """
+        Sample a vector randomly for either source or target
+        """
+        n_samples = self.approximate_krr_regressions_[data_source].anchors().shape[0]
+        n_factors = self.approximate_krr_regressions_[data_source].anchors().shape[1]
+
+        # Random coefficients
+        coefficients = torch.randn(n_samples, n_factors)
+
+        # Random norms
+        M = self.M_X if data_source == 'source' else self.M_Y
+        factor_norms = torch.FloatTensor(n_factors).uniform_(
+            torch.sqrt(torch.min(torch.linalg.svd(M)[1])), 
+            torch.sqrt(torch.max(torch.linalg.svd(M)[1]))
+        )
+
+        # Gram-Schmidt
+        for j in range(n_factors):
+            for i in range(j):
+                similarity = coefficients[:,i].matmul(K).matmul(coefficients[:,j])
+                coefficients[:,j] = coefficients[:,j] - similarity * coefficients[:,i]
+            # Normalise
+            coefficients[:,j] = coefficients[:,j] / torch.sqrt(coefficients[:,j].matmul(K).matmul(coefficients[:,j]))
+        
+        # Correct for norm
+        norm_vectors = torch.sqrt(torch.diag(coefficients.T.matmul(K).matmul(coefficients)))
+        coefficients = coefficients / norm_vectors * factor_norms
+
+        return coefficients
+
+    def compute_random_direction_(self, K_X, K_Y, K_XY):
+        """
+        Sample randomly two vectors and compute cosine similarity
+        """
+        # Random samples
+        perm_source_sample_coef = self.sample_random_vector_('source', K_X)
+        perm_target_sample_coef = self.sample_random_vector_('target', K_Y)
+        
+        # Computation of cosine similarity matrix
+        M_XY_perm_uncorrected = perm_source_sample_coef.T.matmul(K_XY).matmul(perm_target_sample_coef)
+        M_X_perm = perm_source_sample_coef.T.matmul(K_X).matmul(perm_source_sample_coef)
+        M_Y_perm = perm_target_sample_coef.T.matmul(K_Y).matmul(perm_target_sample_coef)
+        inv_M_X_perm = mat_inv_sqrt(M_X_perm)
+        inv_M_Y_perm = mat_inv_sqrt(M_Y_perm)
+
+        return np.linalg.svd(inv_M_X_perm.dot(M_XY_perm_uncorrected).dot(inv_M_Y_perm))[1]
 
 
+    def null_model_similarity(self, n_iter=100, quantile=.95, return_all=False, n_jobs=1):
+        """
+        Compute the null model
+        """
 
+        # Compute similarity
+        K_X = self.approximate_krr_regressions_['target'].kernel_(
+            self.approximate_krr_regressions_['source'].anchors(),
+            self.approximate_krr_regressions_['source'].anchors()
+        )
+        K_Y = self.approximate_krr_regressions_['target'].kernel_(
+            self.approximate_krr_regressions_['target'].anchors(),
+            self.approximate_krr_regressions_['target'].anchors()
+        )
+        K_XY = self.approximate_krr_regressions_['target'].kernel_(
+            self.approximate_krr_regressions_['source'].anchors(),
+            self.approximate_krr_regressions_['target'].anchors()
+        )
+
+        random_directions = Parallel(n_jobs=n_jobs, verbose=1, backend='threading')(
+            delayed(self.compute_random_direction_)(K_X, K_Y, K_XY)
+            for _ in range(n_iter)
+        )
+
+        if return_all:
+            return np.array(random_directions)
+        return np.quantile(np.array(random_directions)[:,0], quantile)
