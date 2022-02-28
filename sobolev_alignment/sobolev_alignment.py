@@ -36,14 +36,13 @@ Example
         target_scvi_params={'train': {'early_stopping': True}, 'model': {}, 'plan': {}},
         n_jobs=2
     )
-    
+
     # Compute consensus features
     sobolev_alignment_clf.fit(
         X_source, X_target,
         source_batch_name='pool', target_batch_name='pool'
     )
     ::
-
 
 
 Notes
