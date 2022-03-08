@@ -3,12 +3,13 @@ GENERATE ARTIFICIAL SAMPLE
 
 @author: Soufiane Mourragui
 
-Use the generative nature of VAE to generate new samples.
+Generate samples using scVI decoder from a multivariate gaussian noise.
+This module generates the training data used to approximate the VAE encoding
+functions by Matérn kernel machines.
 
 """
 
-import torch
-import scvi
+import torch, scvi
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
@@ -16,24 +17,39 @@ from joblib import Parallel, delayed
 
 def generate_samples(
         sample_size: int,
-        batch_names,
-        covariates_values,
-        lib_size,
-        model,
+        batch_names: list,
+        covariates_values: list,
+        lib_size: dict,
+        model: scvi.model.SCVI,
         return_dist: bool=False
 ):
     """
-
+    Generates artificial gene expression profiles.
+    <br/>
+    <b>Note to developers</b>: this function needs to be changed if applied to other VAE model 
+    than scVI.
+    
     Parameters
-        ----------
-        sample_size
-            Number of samples to generate.
-        batch_names
-            List of batches for each samples to generate.
-        lib_size
-            Dictionary of mean library size per batch.
-        model
-            model to train
+    ----------
+    sample_size: int
+        Number of samples to generate.
+    batch_names: list or np.ndarray, default to None
+        List or array with sample_size str values indicating the batch of each sample.
+    covariate_values: list or np.ndarray, default to None
+        List or array with sample_size float values indicating the covariate values of each 
+        sample to generate (as for training scVI model).
+    lib_size
+        Dictionary of mean library size per batch.
+    model
+        scVI model which decoder is here exploited to generate samples.
+    return_dist: bool, default to False
+        Whether to return the distribution parameters (True) or samples from this distribution (False).
+
+    Returns
+    -------
+    If return_dist if False, torch.Tensor (on CPU) with artificial samples in the rows.
+    If return_dist if True, torch.Tensor with distribution parameters (following scVI
+    order) and one torch.Tensor with artificial samples in the rows (CPU).
     """
     # Retrieve batch name from scVI one-hot-encoding
     if batch_names is not None:
@@ -102,26 +118,61 @@ def generate_samples(
         return samples.cpu()
 
 
-def parallel_generate_samples(sample_size,
-                              batch_names,
-                              covariates_values,
-                              lib_size,
-                              model,
-                              return_dist=False,
-                              batch_size=10**3,
-                              n_jobs=1):
+def parallel_generate_samples(
+    sample_size,
+    batch_names,
+    covariates_values,
+    lib_size,
+    model,
+    return_dist=False,
+    batch_size=10**3,
+    n_jobs=1
+    ):
+    """
+    Generates artificial gene expression profiles. Wrapper of parallelize generate_samples, running
+    several threads in parallel.
+    <br/>
+    <b>Note to developers</b>: this function needs to be changed if applied to other VAE model 
+    than scVI.
+    
+    Parameters
+    ----------
+    sample_size: int
+        Number of samples to generate.
+    batch_names: list or np.ndarray, default to None
+        List or array with sample_size str values indicating the batch of each sample.
+    covariate_values: list or np.ndarray, default to None
+        List or array with sample_size float values indicating the covariate values of each 
+        sample to generate (as for training scVI model).
+    lib_size
+        Dictionary of mean library size per batch.
+    model
+        scVI model which decoder is here exploited to generate samples.
+    return_dist: bool, default to False
+        Whether to return the distribution parameters (True) or samples from this distribution (False).
+    batch_size: int, default to 10**3
+        Number of sample to generate per batch.
+    n_jobs: int, default to 1
+        Number of threads to launch. n_jobs=-1 will launch as many threads as there are CPUs available.
+    Returns
+    -------
+    If return_dist if False, torch.Tensor (on CPU) with artificial samples in the rows.
+    If return_dist if True, torch.Tensor with distribution parameters (following scVI
+    order) and one torch.Tensor with artificial samples in the rows (CPU).
+    """
     results = Parallel(n_jobs=n_jobs, verbose=1)(
-            delayed(generate_samples)(
-                batch_size, 
-                batch_names[i:i+batch_size] if batch_names is not None else None, 
-                covariates_values[i:i+batch_size] if covariates_values is not None else None, 
-                lib_size, 
-                model, 
-                return_dist
-            )
-            for i in range(0,sample_size,batch_size)
+        delayed(generate_samples)(
+            batch_size, 
+            batch_names[i:i+batch_size] if batch_names is not None else None, 
+            covariates_values[i:i+batch_size] if covariates_values is not None else None, 
+            lib_size, 
+            model, 
+            return_dist
+        )
+        for i in range(0,sample_size,batch_size)
     )
 
     if return_dist:
         return results
+        
     return torch.cat(results)

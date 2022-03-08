@@ -722,8 +722,6 @@ class SobolevAlignment:
             )
 
         artificial_samples = np.concatenate(artificial_samples)
-        
-
 
         return artificial_samples
 
@@ -891,10 +889,10 @@ class SobolevAlignment:
 
 
     def save(
-            self,
-            folder: str = '.',
-            with_krr: bool=True,
-            with_model: bool=True
+        self,
+        folder: str = '.',
+        with_krr: bool=True,
+        with_model: bool=True
     ):
         if not os.path.exists(folder) and not os.path.isdir(folder):
             os.mkdir(folder)
@@ -954,10 +952,26 @@ class SobolevAlignment:
 
 
     def load(
-            folder: str = '.',
-            with_krr: bool=True,
-            with_model: bool=True
+        folder: str = '.',
+        with_krr: bool=True,
+        with_model: bool=True
     ):
+    """
+    Load a Sobolev Alignment instance.
+
+    Parameters
+    ----------
+    folder: str, default to '.'
+        Folder path where the instance is located
+    with_krr: bool, default to True
+        Whether KRR approximations must be loaded.
+    with_model: bool, default to True
+        Whether scvi models (VAEs) must be loaded.
+
+    Returns
+    -------
+    SobolevAlignment: instance saved at the folder location.
+    """
         clf = SobolevAlignment()
 
         if with_model:
@@ -1173,11 +1187,26 @@ class SobolevAlignment:
         }
 
 
-    def feature_analysis(self,
-                         max_order: int=1,
-                         gene_names:list=None):
+    def feature_analysis(
+        self,
+        max_order: int=1,
+        gene_names:list=None
+    ):
+    """
+    Computes the gene contributions (feature weights) associated with the KRRs which approximate the latent factors and the SPVs.
+    Technically, given the kernel machine which approximates a latent factor (KRR), this method computes the weights associated
+    with the orthonormal basis in the Gaussian-kernel associated Sobolev space.
 
-        # Make parameters
+    Parameters
+    ----------
+    max_order: int, default to 1
+        Order of the features to compute. 1 corresponds to linear features (genes), two to interaction terms.
+    gene_names: list of str, default to None
+        Names of the genes passed as input to Sobolev Alignment. <b>WARNING</b> Must be in the same order as the input to 
+        SobolevAlignment.fit
+    """
+
+        # Make kernel parameter
         if 'gamma' in self.krr_params['source']['kernel_params'] and 'gamma' in self.krr_params['target']['kernel_params']:
             gamma_s = self.krr_params['source']['kernel_params']['gamma']
             gamma_t = self.krr_params['target']['kernel_params']['gamma']
@@ -1187,6 +1216,7 @@ class SobolevAlignment:
         assert gamma_s == gamma_t
         self.gamma = gamma_s
 
+        # Compute the sample offset (matrix O_X and O_Y)
         self.sample_offset = {
             x:_compute_offset(self.approximate_krr_regressions_[x].anchors(), self.gamma)
             for x in self.training_data
@@ -1200,6 +1230,7 @@ class SobolevAlignment:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.factor_level_feature_weights_df = {}
         for x in self.training_data:
+            # Computes all the features of order d.
             basis_feature_weights_df = higher_order_contribution(
                 d=max_order,
                 data=self.approximate_krr_regressions_[x].anchors().cpu().detach().numpy(),
@@ -1208,6 +1239,8 @@ class SobolevAlignment:
                 gamma=self.gamma,
                 n_jobs=self.n_jobs
             )
+
+            # Process feature weights.
             index = np.arange(self.approximate_krr_regressions_[x].sample_weights_.T.shape[0])
             columns = basis_feature_weights_df.columns
             values = self.approximate_krr_regressions_[x].sample_weights_.T.to(device)
@@ -1218,6 +1251,7 @@ class SobolevAlignment:
             del basis_feature_weights_df
             gc.collect()
 
+        # Compute SPV weights by rotating the factor-level weights.
         self.pv_level_feature_weights_df = {
             x: pd.DataFrame(
                 self.untransformed_rotations_[x].T.dot(self.sqrt_inv_matrices_[x]).dot(self.factor_level_feature_weights_df[x]),
@@ -1280,6 +1314,7 @@ class SobolevAlignment:
             artificial_samples_.grad = None
         
         return torch.stack(gradients)
+
 
     def sample_random_vector_(self, data_source, K):
         """
