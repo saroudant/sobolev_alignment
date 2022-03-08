@@ -290,7 +290,7 @@ class KRRApprox:
         rows and encoding functions (embedding) in the columns.
         """
 
-        if self.mean_center or self.unit_std
+        if self.mean_center or self.unit_std:
             X = torch.Tensor(self.pre_process_.transform(X))
 
         if self.method == 'sklearn':

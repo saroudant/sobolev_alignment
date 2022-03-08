@@ -73,6 +73,7 @@ from .krr_approx import KRRApprox
 from .kernel_operations import mat_inv_sqrt
 from .feature_analysis import higher_order_contribution, _compute_offset
 from .multi_krr_approx import MultiKRRApprox
+from .interpolated_features import compute_optimal_tau, project_on_interpolate_PV
 
 
 # Default library size used when re-scaling artificial data
@@ -888,6 +889,95 @@ class SobolevAlignment:
         }
 
 
+    def compute_consensus_features(
+        self,
+        X_input: dict, 
+        n_similar_pv: int, 
+        fit: bool=True
+        ):
+        """
+        Project the data on interpolated features, i.e., a linear combination of source and target SPVs which best balances the effect of source and target
+        data.
+
+
+        Parameters
+        ----------
+        X_input: dict
+            Dictionary of data (AnnData) to project. Two keys are needed: 'source' and 'target'.
+        n_similar_pv: int
+            Number of top SPVs to project the data on.
+        fit: bool, default to True
+            Whether the interpolated times must be computed. If False, will use previously computed times, but will return an error if not previously fitted.
+
+        Returns
+        ----------
+        interpolated_proj_df: pd.DataFrame
+            DataFrame of concatenated source and target samples after projection on consensus features.
+        """
+
+        X_data_log = {
+            data_source: self._frobenius_normalisation(
+                data_source,
+                torch.log10(torch.Tensor(X_input[data_source].X + 1)),
+                frob_norm_source=True
+            ) for data_source in ['source', 'target']
+        }
+
+        # Project data on KRR directions
+        krr_projections = {
+            pv_data_source: {
+                proj_data_source: self.approximate_krr_regressions_[pv_data_source].transform(
+                    X_data_log[proj_data_source]
+                ).detach().numpy()
+                for proj_data_source in ['source', 'target']
+            } for pv_data_source in ['source', 'target']
+        }
+
+        # Rotate KRR directions to obtain PVs
+        pv_projections = {}
+        for pv_data_source in krr_projections:
+            pv_projections[pv_data_source] = {}
+            for proj_data_source in krr_projections[pv_data_source]:
+                rotated_proj = self.untransformed_rotations_[pv_data_source].T
+                rotated_proj = rotated_proj.dot(self.sqrt_inv_matrices_[pv_data_source])
+                rotated_proj = rotated_proj.dot(krr_projections[pv_data_source][proj_data_source].T).T
+                
+                pv_projections[pv_data_source][proj_data_source] = rotated_proj
+        del rotated_proj
+
+        # Mean-center projection data on the PV
+        pv_projections = {
+            pv_data_source: {
+                proj_data_source: StandardScaler(with_mean=True, with_std=False).fit_transform(
+                    pv_projections[pv_data_source][proj_data_source]
+                ) for proj_data_source in ['source', 'target']
+            } for pv_data_source in ['source', 'target']
+        }
+
+        # Compute optimal interpolation point
+        if fit:
+            self.n_similar_pv = n_similar_pv
+            self.optimal_interpolation_step_ = {
+                PV_number: compute_optimal_tau(
+                    PV_number, pv_projections, np.arccos(self.principal_angles), n_interpolation=100
+                ) for PV_number in range(self.n_similar_pv)
+            }
+
+        # Project on optimal interpolation time
+        interpolated_proj_df = {
+            PV_number: np.concatenate(list(project_on_interpolate_PV(
+                np.arccos(self.principal_angles)[PV_number], 
+                PV_number, 
+                optimal_step,
+                pv_projections
+            ))) for PV_number, optimal_step in self.optimal_interpolation_step_.items()
+        }
+
+        return pd.DataFrame(interpolated_proj_df)
+
+
+
+
     def save(
         self,
         folder: str = '.',
@@ -951,27 +1041,23 @@ class SobolevAlignment:
             )
 
 
-    def load(
-        folder: str = '.',
-        with_krr: bool=True,
-        with_model: bool=True
-    ):
-    """
-    Load a Sobolev Alignment instance.
+    def load(folder: str = '.', with_krr: bool=True, with_model: bool=True):
+        """
+        Load a Sobolev Alignment instance.
 
-    Parameters
-    ----------
-    folder: str, default to '.'
-        Folder path where the instance is located
-    with_krr: bool, default to True
-        Whether KRR approximations must be loaded.
-    with_model: bool, default to True
-        Whether scvi models (VAEs) must be loaded.
+        Parameters
+        ----------
+        folder: str, default to '.'
+            Folder path where the instance is located
+        with_krr: bool, default to True
+            Whether KRR approximations must be loaded.
+        with_model: bool, default to True
+            Whether scvi models (VAEs) must be loaded.
 
-    Returns
-    -------
-    SobolevAlignment: instance saved at the folder location.
-    """
+        Returns
+        -------
+        SobolevAlignment: instance saved at the folder location.
+        """
         clf = SobolevAlignment()
 
         if with_model:
@@ -1192,19 +1278,19 @@ class SobolevAlignment:
         max_order: int=1,
         gene_names:list=None
     ):
-    """
-    Computes the gene contributions (feature weights) associated with the KRRs which approximate the latent factors and the SPVs.
-    Technically, given the kernel machine which approximates a latent factor (KRR), this method computes the weights associated
-    with the orthonormal basis in the Gaussian-kernel associated Sobolev space.
+        """
+        Computes the gene contributions (feature weights) associated with the KRRs which approximate the latent factors and the SPVs.
+        Technically, given the kernel machine which approximates a latent factor (KRR), this method computes the weights associated
+        with the orthonormal basis in the Gaussian-kernel associated Sobolev space.
 
-    Parameters
-    ----------
-    max_order: int, default to 1
-        Order of the features to compute. 1 corresponds to linear features (genes), two to interaction terms.
-    gene_names: list of str, default to None
-        Names of the genes passed as input to Sobolev Alignment. <b>WARNING</b> Must be in the same order as the input to 
-        SobolevAlignment.fit
-    """
+        Parameters
+        ----------
+        max_order: int, default to 1
+            Order of the features to compute. 1 corresponds to linear features (genes), two to interaction terms.
+        gene_names: list of str, default to None
+            Names of the genes passed as input to Sobolev Alignment. <b>WARNING</b> Must be in the same order as the input to 
+            SobolevAlignment.fit
+        """
 
         # Make kernel parameter
         if 'gamma' in self.krr_params['source']['kernel_params'] and 'gamma' in self.krr_params['target']['kernel_params']:
