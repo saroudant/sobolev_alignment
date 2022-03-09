@@ -12,3 +12,8 @@ Sobolev Alignment requires Falkon to run. Installation procedure is thoroughly e
 ### CUDA and GPU compliance
 Our implementation has been tested for Cuda 11.2 and exploits the multi-GPU implementation of Falkon. However, compatibility problems are frequent.
 
+## Installation
+You can install the module either using 'python setup.py install' or 'pip install .'
+<br/>
+Further documentation of this module is under construction.
+
