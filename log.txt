@@ -1,170 +1,0 @@
-============================= test session starts ==============================
-platform linux -- Python 3.8.8, pytest-6.2.3, py-1.10.0, pluggy-0.13.1
-rootdir: /science/s.mourragui/sobolev_alignment/src/sobolev_alignment, configfile: pytest.ini
-collected 13 items
-
-test/test_krr_approx.py ...........                                      [ 84%]
-test/test_sobolev_alignment.py EE                                        [100%]
-
-==================================== ERRORS ====================================
-___ ERROR at setup of TestSobolevAlignment.test_training_scvi_batch_trained ____
-
-self = <test_sobolev_alignment.TestSobolevAlignment object at 0x7f6522ce1250>
-source_anndata = AnnData object with n_obs × n_vars = 500 × 50
-    obs: 'batch', '_scvi_batch', '_scvi_labels', '_scvi_local_l_mean', '_scvi_local_l_var'
-    uns: '_scvi'
-    layers: 'counts'
-target_anndata = AnnData object with n_obs × n_vars = 500 × 50
-    obs: 'batch', '_scvi_batch', '_scvi_labels', '_scvi_local_l_mean', '_scvi_local_l_var'
-    uns: '_scvi'
-    layers: 'counts'
-sobolev_alignment_batch = <sobolev_alignment.sobolev_alignment.SobolevAlignment object at 0x7f6522d086d0>
-
-    @pytest.fixture(scope='class')
-    def scvi_batch_trained(
-            self,
-            source_anndata,
-            target_anndata,
-            sobolev_alignment_batch
-    ):
->       return sobolev_alignment_batch.fit(
-            X_source=source_anndata,
-            X_target=target_anndata,
-            source_batch_name='batch',
-            target_batch_name='batch',
-            n_artificial_samples=n_artificial_samples
-        )
-
-test/test_sobolev_alignment.py:147: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-sobolev_alignment/sobolev_alignment.py:130: in fit
-    self.artificial_embeddings_ = {
-sobolev_alignment/sobolev_alignment.py:131: in <dictcomp>
-    x: self._embed_artificial_samples(x, large_batch_size=n_samples_per_sample_batch)
-sobolev_alignment/sobolev_alignment.py:302: in _embed_artificial_samples
-    return np.concatenate(embedding)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-args = ([],), kwargs = {}, relevant_args = []
-
->   ???
-E   ValueError: need at least one array to concatenate
-
-<__array_function__ internals>:5: ValueError
----------------------------- Captured stdout setup -----------------------------
-[34mINFO    [0m Using batches from adata.obs[1m[[0m[32m"batch"[0m[1m][0m                                  
-[34mINFO    [0m No label_key inputted, assuming all cells have same label              
-[34mINFO    [0m Using data from adata.layers[1m[[0m[32m"counts"[0m[1m][0m                                 
-[34mINFO    [0m Computing library size prior per batch                                 
-[34mINFO    [0m Successfully registered anndata object containing [1;34m500[0m cells, [1;34m50[0m vars, [1;34m3[0m
-         batches, [1;34m1[0m labels, and [1;34m0[0m proteins. Also registered [1;34m0[0m extra categorical 
-         covariates and [1;34m0[0m extra continuous covariates.                          
-[34mINFO    [0m Please do not further modify adata until model is trained.             
-Training:   0%|          | 0/10 [00:00<?, ?it/s]Epoch 1/10:   0%|          | 0/10 [00:00<?, ?it/s]Epoch 1/10:  10%|█         | 1/10 [00:00<00:00, 31.71it/s, loss=215, v_num=1]Epoch 2/10:  10%|█         | 1/10 [00:00<00:00, 18.42it/s, loss=215, v_num=1]Epoch 2/10:  20%|██        | 2/10 [00:00<00:00, 24.65it/s, loss=210, v_num=1]Epoch 3/10:  20%|██        | 2/10 [00:00<00:00, 22.02it/s, loss=210, v_num=1]Epoch 3/10:  30%|███       | 3/10 [00:00<00:00, 25.64it/s, loss=210, v_num=1]Epoch 3/10:  30%|███       | 3/10 [00:00<00:00, 25.64it/s, loss=206, v_num=1]Epoch 4/10:  30%|███       | 3/10 [00:00<00:00, 25.64it/s, loss=206, v_num=1]Epoch 4/10:  40%|████      | 4/10 [00:00<00:00, 25.64it/s, loss=202, v_num=1]Epoch 5/10:  40%|████      | 4/10 [00:00<00:00, 25.64it/s, loss=202, v_num=1]Epoch 5/10:  50%|█████     | 5/10 [00:00<00:00, 25.64it/s, loss=198, v_num=1]Epoch 6/10:  50%|█████     | 5/10 [00:00<00:00, 25.64it/s, loss=198, v_num=1]Epoch 6/10:  60%|██████    | 6/10 [00:00<00:00, 26.72it/s, loss=198, v_num=1]Epoch 6/10:  60%|██████    | 6/10 [00:00<00:00, 26.72it/s, loss=190, v_num=1]Epoch 7/10:  60%|██████    | 6/10 [00:00<00:00, 26.72it/s, loss=190, v_num=1]Epoch 7/10:  70%|███████   | 7/10 [00:00<00:00, 26.72it/s, loss=183, v_num=1]Epoch 8/10:  70%|███████   | 7/10 [00:00<00:00, 26.72it/s, loss=183, v_num=1]Epoch 8/10:  80%|████████  | 8/10 [00:00<00:00, 26.72it/s, loss=177, v_num=1]Epoch 9/10:  80%|████████  | 8/10 [00:00<00:00, 26.72it/s, loss=177, v_num=1]Epoch 9/10:  90%|█████████ | 9/10 [00:00<00:00, 27.12it/s, loss=177, v_num=1]Epoch 9/10:  90%|█████████ | 9/10 [00:00<00:00, 27.12it/s, loss=171, v_num=1]Epoch 10/10:  90%|█████████ | 9/10 [00:00<00:00, 27.12it/s, loss=171, v_num=1]Epoch 10/10: 100%|██████████| 10/10 [00:00<00:00, 27.12it/s, loss=165, v_num=1]Epoch 10/10: 100%|██████████| 10/10 [00:00<00:00, 26.26it/s, loss=165, v_num=1]
-[34mINFO    [0m Using batches from adata.obs[1m[[0m[32m"batch"[0m[1m][0m                                  
-[34mINFO    [0m No label_key inputted, assuming all cells have same label              
-[34mINFO    [0m Using data from adata.layers[1m[[0m[32m"counts"[0m[1m][0m                                 
-[34mINFO    [0m Computing library size prior per batch                                 
-[34mINFO    [0m Successfully registered anndata object containing [1;34m500[0m cells, [1;34m50[0m vars, [1;34m3[0m
-         batches, [1;34m1[0m labels, and [1;34m0[0m proteins. Also registered [1;34m0[0m extra categorical 
-         covariates and [1;34m0[0m extra continuous covariates.                          
-[34mINFO    [0m Please do not further modify adata until model is trained.             
-Training:   0%|          | 0/10 [00:00<?, ?it/s]Epoch 1/10:   0%|          | 0/10 [00:00<?, ?it/s]Epoch 1/10:  10%|█         | 1/10 [00:00<00:00, 38.07it/s, loss=204, v_num=1]Epoch 2/10:  10%|█         | 1/10 [00:00<00:00, 20.87it/s, loss=204, v_num=1]Epoch 2/10:  20%|██        | 2/10 [00:00<00:00, 26.78it/s, loss=199, v_num=1]Epoch 3/10:  20%|██        | 2/10 [00:00<00:00, 23.75it/s, loss=199, v_num=1]Epoch 3/10:  30%|███       | 3/10 [00:00<00:00, 27.08it/s, loss=199, v_num=1]Epoch 3/10:  30%|███       | 3/10 [00:00<00:00, 27.08it/s, loss=194, v_num=1]Epoch 4/10:  30%|███       | 3/10 [00:00<00:00, 27.08it/s, loss=194, v_num=1]Epoch 4/10:  40%|████      | 4/10 [00:00<00:00, 27.08it/s, loss=190, v_num=1]Epoch 5/10:  40%|████      | 4/10 [00:00<00:00, 27.08it/s, loss=190, v_num=1]Epoch 5/10:  50%|█████     | 5/10 [00:00<00:00, 27.08it/s, loss=186, v_num=1]Epoch 6/10:  50%|█████     | 5/10 [00:00<00:00, 27.08it/s, loss=186, v_num=1]Epoch 6/10:  60%|██████    | 6/10 [00:00<00:00, 27.49it/s, loss=186, v_num=1]Epoch 6/10:  60%|██████    | 6/10 [00:00<00:00, 27.49it/s, loss=179, v_num=1]Epoch 7/10:  60%|██████    | 6/10 [00:00<00:00, 27.49it/s, loss=179, v_num=1]Epoch 7/10:  70%|███████   | 7/10 [00:00<00:00, 27.49it/s, loss=172, v_num=1]Epoch 8/10:  70%|███████   | 7/10 [00:00<00:00, 27.49it/s, loss=172, v_num=1]Epoch 8/10:  80%|████████  | 8/10 [00:00<00:00, 27.49it/s, loss=166, v_num=1]Epoch 9/10:  80%|████████  | 8/10 [00:00<00:00, 27.49it/s, loss=166, v_num=1]Epoch 9/10:  90%|█████████ | 9/10 [00:00<00:00, 27.60it/s, loss=166, v_num=1]Epoch 9/10:  90%|█████████ | 9/10 [00:00<00:00, 27.60it/s, loss=160, v_num=1]Epoch 10/10:  90%|█████████ | 9/10 [00:00<00:00, 27.60it/s, loss=160, v_num=1]Epoch 10/10: 100%|██████████| 10/10 [00:00<00:00, 27.60it/s, loss=155, v_num=1]Epoch 10/10: 100%|██████████| 10/10 [00:00<00:00, 26.83it/s, loss=155, v_num=1]
->>
- SIZE START
-[]
-[]
-
- SIZE END
----------------------------- Captured stderr setup -----------------------------
-GPU available: False, used: False
-TPU available: None, using: 0 TPU cores
-GPU available: False, used: False
-TPU available: None, using: 0 TPU cores
-[Parallel(n_jobs=1)]: Using backend SequentialBackend with 1 concurrent workers.
-[Parallel(n_jobs=1)]: Done   1 out of   1 | elapsed:    0.0s finished
-[Parallel(n_jobs=1)]: Using backend SequentialBackend with 1 concurrent workers.
-[Parallel(n_jobs=1)]: Done   1 out of   1 | elapsed:    0.0s finished
------------------------------- Captured log setup ------------------------------
-INFO     scvi.data._anndata:_anndata.py:593 Using batches from adata.obs["batch"]
-INFO     scvi.data._anndata:_anndata.py:570 No label_key inputted, assuming all cells have same label
-INFO     scvi.data._anndata:_anndata.py:799 Using data from adata.layers["counts"]
-INFO     scvi.data._anndata:_anndata.py:824 Computing library size prior per batch
-INFO     scvi.data._anndata:_anndata.py:875 Successfully registered anndata object containing 500 cells, 50 vars, 3 batches, 1 labels, and 0 proteins. Also registered 0 extra categorical covariates and 0 extra continuous covariates.
-INFO     scvi.data._anndata:_anndata.py:242 Please do not further modify adata until model is trained.
-INFO     lightning:distributed.py:54 GPU available: False, used: False
-INFO     lightning:distributed.py:54 TPU available: None, using: 0 TPU cores
-INFO     scvi.data._anndata:_anndata.py:593 Using batches from adata.obs["batch"]
-INFO     scvi.data._anndata:_anndata.py:570 No label_key inputted, assuming all cells have same label
-INFO     scvi.data._anndata:_anndata.py:799 Using data from adata.layers["counts"]
-INFO     scvi.data._anndata:_anndata.py:824 Computing library size prior per batch
-INFO     scvi.data._anndata:_anndata.py:875 Successfully registered anndata object containing 500 cells, 50 vars, 3 batches, 1 labels, and 0 proteins. Also registered 0 extra categorical covariates and 0 extra continuous covariates.
-INFO     scvi.data._anndata:_anndata.py:242 Please do not further modify adata until model is trained.
-INFO     lightning:distributed.py:54 GPU available: False, used: False
-INFO     lightning:distributed.py:54 TPU available: None, using: 0 TPU cores
-_________ ERROR at setup of TestSobolevAlignment.test_KRR_scvi_trained _________
-
-self = <test_sobolev_alignment.TestSobolevAlignment object at 0x7f6522ce1250>
-source_anndata = AnnData object with n_obs × n_vars = 500 × 50
-    obs: 'batch', '_scvi_batch', '_scvi_labels', '_scvi_local_l_mean', '_scvi_local_l_var'
-    uns: '_scvi'
-    layers: 'counts'
-target_anndata = AnnData object with n_obs × n_vars = 500 × 50
-    obs: 'batch', '_scvi_batch', '_scvi_labels', '_scvi_local_l_mean', '_scvi_local_l_var'
-    uns: '_scvi'
-    layers: 'counts'
-sobolev_alignment_batch = <sobolev_alignment.sobolev_alignment.SobolevAlignment object at 0x7f6522d086d0>
-
-    @pytest.fixture(scope='class')
-    def scvi_batch_trained(
-            self,
-            source_anndata,
-            target_anndata,
-            sobolev_alignment_batch
-    ):
->       return sobolev_alignment_batch.fit(
-            X_source=source_anndata,
-            X_target=target_anndata,
-            source_batch_name='batch',
-            target_batch_name='batch',
-            n_artificial_samples=n_artificial_samples
-        )
-
-test/test_sobolev_alignment.py:147: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-sobolev_alignment/sobolev_alignment.py:130: in fit
-    self.artificial_embeddings_ = {
-sobolev_alignment/sobolev_alignment.py:131: in <dictcomp>
-    x: self._embed_artificial_samples(x, large_batch_size=n_samples_per_sample_batch)
-sobolev_alignment/sobolev_alignment.py:302: in _embed_artificial_samples
-    return np.concatenate(embedding)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-args = ([],), kwargs = {}, relevant_args = []
-
->   ???
-E   ValueError: need at least one array to concatenate
-
-<__array_function__ internals>:5: ValueError
-=============================== warnings summary ===============================
-../../../../../home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/_pytest/config/__init__.py:1183
-  /home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/_pytest/config/__init__.py:1183: PytestDeprecationWarning: The --strict option is deprecated, use --strict-markers instead.
-    self.issue_config_time_warning(
-
-../../../../../home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/falkon/utils/switches.py:21
-test/test_krr_approx.py::TestKRRApprox::test_rbf_falkon_fit
-test/test_krr_approx.py::TestKRRApprox::test_matern_falkon_fit
-test/test_krr_approx.py::TestKRRApprox::test_laplacian_falkon_fit
-test/test_krr_approx.py::TestKRRApprox::test_ridge_coef_falkon_fit
-  /home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/falkon/utils/switches.py:21: UserWarning: Failed to initialize CUDA library; falling back to CPU. Set 'use_cpu' to True to avoid this warning.
-    warnings.warn(get_error_str("CUDA", None))
-
-test/test_sobolev_alignment.py::TestSobolevAlignment::test_training_scvi_batch_trained
-  /home/s.mourragui/.conda/envs/sobolev_alignment/lib/python3.8/site-packages/anndata/_core/anndata.py:119: ImplicitModificationWarning: Transforming to str index.
-    warnings.warn("Transforming to str index.", ImplicitModificationWarning)
-
--- Docs: https://docs.pytest.org/en/stable/warnings.html
-=========================== short test summary info ============================
-ERROR test/test_sobolev_alignment.py::TestSobolevAlignment::test_training_scvi_batch_trained
-ERROR test/test_sobolev_alignment.py::TestSobolevAlignment::test_KRR_scvi_trained
-=================== 11 passed, 7 warnings, 2 errors in 7.64s ===================
