@@ -1,6 +1,6 @@
 # Sobolev Alignment
 
-Alignment of deep probabilistic models for 
+Alignment of deep probabilistic models for comparing cell line and tumor single cell profiles.
 
 ## Requirements
 ### scVI-tools
@@ -11,6 +11,4 @@ Sobolev Alignment requires Falkon to run. Installation procedure is thoroughly e
 
 ### CUDA and GPU compliance
 Our implementation has been tested for Cuda 11.2 and exploits the multi-GPU implementation of Falkon. However, compatibility problems are frequent.
-
-## Main implementation architecture.
 
