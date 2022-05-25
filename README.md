@@ -17,3 +17,7 @@ You can install the module either using 'python setup.py install' or 'pip instal
 <br/>
 Further documentation of this module is under construction.
 
+## Citation
+
+If you find this package useful, please cite the following paper:
+<a href="https://www.biorxiv.org/content/10.1101/2022.03.08.483431v1">Identifying commonalities between cell lines and tumors at the single cell level using Sobolev Alignment of deep generative models</a>, Mourragui et al, 2022, Biorxiv.
